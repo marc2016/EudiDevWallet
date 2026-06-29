@@ -2,6 +2,11 @@ import type { CertificateMode, ResponseMode } from '../types/openid4vp';
 
 const CERT_KEY = 'pew_certificate_mode';
 const RESPONSE_KEY = 'pew_response_mode';
+const VIEW_KEY = 'pew_view_mode';
+const COLOR_SCHEME_KEY = 'pew_color_scheme';
+
+export type ViewMode = 'simple' | 'debug';
+export type ColorScheme = 'light' | 'dark';
 
 export const CERTIFICATE_MODE_OPTIONS = [
   { label: 'Aus', value: 'off' as CertificateMode },
@@ -35,6 +40,26 @@ export function loadResponseMode(): ResponseMode {
 
 export function saveResponseMode(mode: ResponseMode): void {
   localStorage.setItem(RESPONSE_KEY, mode);
+}
+
+export function loadViewMode(): ViewMode {
+  const v = localStorage.getItem(VIEW_KEY);
+  if (v === 'debug') return 'debug';
+  return 'simple';
+}
+
+export function saveViewMode(mode: ViewMode): void {
+  localStorage.setItem(VIEW_KEY, mode);
+}
+
+export function loadColorScheme(): ColorScheme {
+  const v = localStorage.getItem(COLOR_SCHEME_KEY);
+  if (v === 'dark') return 'dark';
+  return 'light';
+}
+
+export function saveColorScheme(scheme: ColorScheme): void {
+  localStorage.setItem(COLOR_SCHEME_KEY, scheme);
 }
 
 export function resolveResponseMode(

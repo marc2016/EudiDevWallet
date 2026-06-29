@@ -1,5 +1,4 @@
-import { Card } from 'primereact/card';
-import { SelectButton } from 'primereact/selectbutton';
+import { Dropdown } from 'primereact/dropdown';
 import {
   CERTIFICATE_MODE_OPTIONS,
   RESPONSE_MODE_OPTIONS,
@@ -8,7 +7,7 @@ import {
 } from '../settings/walletSettings';
 import type { CertificateMode, ResponseMode } from '../types/openid4vp';
 
-interface WalletSettingsProps {
+export interface WalletSettingsProps {
   certificateMode: CertificateMode;
   responseMode: ResponseMode;
   onCertificateModeChange: (m: CertificateMode) => void;
@@ -28,37 +27,46 @@ export function WalletSettings({
   }));
 
   return (
-    <Card title="Einstellungen" className="mb-2">
-      <div className="flex flex-column gap-3">
-        <div className="flex flex-column gap-2">
-          <span className="text-sm font-medium text-color-secondary">Zertifikatsmodus</span>
-          <SelectButton
-            value={certificateMode}
-            options={certOptions}
-            onChange={(e) => {
-              if (e.value) {
-                saveCertificateMode(e.value);
-                onCertificateModeChange(e.value);
-              }
-            }}
-            className="settings-select"
-          />
-        </div>
-        <div className="flex flex-column gap-2">
-          <span className="text-sm font-medium text-color-secondary">Antwortformat</span>
-          <SelectButton
-            value={responseMode}
-            options={RESPONSE_MODE_OPTIONS}
-            onChange={(e) => {
-              if (e.value) {
-                saveResponseMode(e.value);
-                onResponseModeChange(e.value);
-              }
-            }}
-            className="settings-select"
-          />
-        </div>
+    <div className="wallet-settings-row">
+      <div className="wallet-settings-group">
+        <label className="text-sm font-medium text-color-secondary" htmlFor="cert-mode">
+          Zertifikatsmodus
+        </label>
+        <Dropdown
+          inputId="cert-mode"
+          value={certificateMode}
+          options={certOptions}
+          optionLabel="label"
+          optionValue="value"
+          optionDisabled="disabled"
+          onChange={(e) => {
+            if (e.value) {
+              saveCertificateMode(e.value);
+              onCertificateModeChange(e.value);
+            }
+          }}
+          className="w-full settings-dropdown"
+        />
       </div>
-    </Card>
+      <div className="wallet-settings-group">
+        <label className="text-sm font-medium text-color-secondary" htmlFor="response-mode">
+          Antwortformat
+        </label>
+        <Dropdown
+          inputId="response-mode"
+          value={responseMode}
+          options={RESPONSE_MODE_OPTIONS}
+          optionLabel="label"
+          optionValue="value"
+          onChange={(e) => {
+            if (e.value) {
+              saveResponseMode(e.value);
+              onResponseModeChange(e.value);
+            }
+          }}
+          className="w-full settings-dropdown"
+        />
+      </div>
+    </div>
   );
 }

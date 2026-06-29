@@ -11,6 +11,8 @@
     "mock-verifier": "node scripts/mock-verifier.mjs"
   },
   "dependencies": {
+    "@mdi/js": "^7.4.47",
+    "@mdi/react": "^1.6.1",
     "jose": "^6.2.3",
     "primeflex": "^4.0.0",
     "primeicons": "^7.0.0",

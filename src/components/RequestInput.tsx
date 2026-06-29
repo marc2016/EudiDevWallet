@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { Card } from 'primereact/card';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Button } from 'primereact/button';
+import { WalletSettings, type WalletSettingsProps } from './WalletSettings';
 
 interface RequestInputProps {
   onAnalyze: (url: string) => void;
   loading: boolean;
+  settings?: WalletSettingsProps;
 }
 
-export function RequestInput({ onAnalyze, loading }: RequestInputProps) {
+export function RequestInput({ onAnalyze, loading, settings }: RequestInputProps) {
   const [value, setValue] = useState('');
 
   return (
@@ -33,6 +35,11 @@ export function RequestInput({ onAnalyze, loading }: RequestInputProps) {
           disabled={!value.trim()}
         />
       </div>
+      {settings && (
+        <div className="wallet-settings-inline">
+          <WalletSettings {...settings} />
+        </div>
+      )}
     </Card>
   );
 }

@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { Card } from 'primereact/card';
 import { Timeline } from 'primereact/timeline';
 import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
@@ -89,36 +88,41 @@ export function ActivityLogPanel() {
   };
 
   return (
-    <Card title="Aktivitäts-Protokoll" className="log-panel">
-      <div className="flex flex-wrap gap-2 mb-2">
-        <Button icon="pi pi-trash" severity="secondary" size="small" onClick={clear} tooltip="Log leeren" />
-        <Button icon="pi pi-download" severity="secondary" size="small" onClick={exportJson} tooltip="Export JSON" />
-        <Button icon="pi pi-copy" severity="secondary" size="small" onClick={copyLog} tooltip="Kopieren" />
+    <div className="log-panel">
+      <div className="log-panel-header">
+        <h2 className="log-panel-title">Aktivitäts-Protokoll</h2>
+        <div className="flex flex-wrap gap-2">
+          <Button icon="pi pi-trash" severity="secondary" size="small" onClick={clear} tooltip="Log leeren" />
+          <Button icon="pi pi-download" severity="secondary" size="small" onClick={exportJson} tooltip="Export JSON" />
+          <Button icon="pi pi-copy" severity="secondary" size="small" onClick={copyLog} tooltip="Kopieren" />
+        </div>
       </div>
 
-      {entries.length === 0 ? (
-        <p className="text-color-secondary text-sm">Noch keine Einträge.</p>
-      ) : (
-        <Timeline
-          value={entries}
-          align="left"
-          className="log-timeline"
-          opposite={(item: ActivityLogEntry) => (
-            <div className="text-xs text-color-secondary log-timeline-meta">
-              <div>{formatLogTime(item.timestamp)}</div>
-              <Tag value={item.category} severity="secondary" className="mt-1" />
-            </div>
-          )}
-          marker={(item: ActivityLogEntry) => (
-            <i
-              className={levelIcon(item.level)}
-              style={{ color: levelColor(item.level), fontSize: '1.1rem' }}
-            />
-          )}
-          content={(item: ActivityLogEntry) => <TimelineItem entry={item} />}
-        />
-      )}
-      <div ref={bottomRef} />
-    </Card>
+      <div className="log-panel-content">
+        {entries.length === 0 ? (
+          <p className="text-color-secondary text-sm m-0">Noch keine Einträge.</p>
+        ) : (
+          <Timeline
+            value={entries}
+            align="left"
+            className="log-timeline"
+            opposite={(item: ActivityLogEntry) => (
+              <div className="text-xs text-color-secondary log-timeline-meta">
+                <div>{formatLogTime(item.timestamp)}</div>
+                <Tag value={item.category} severity="secondary" className="mt-1" />
+              </div>
+            )}
+            marker={(item: ActivityLogEntry) => (
+              <i
+                className={levelIcon(item.level)}
+                style={{ color: levelColor(item.level), fontSize: '1.1rem' }}
+              />
+            )}
+            content={(item: ActivityLogEntry) => <TimelineItem entry={item} />}
+          />
+        )}
+        <div ref={bottomRef} />
+      </div>
+    </div>
   );
 }
