@@ -48,5 +48,3 @@ export const CLAIM_LABELS: Record<string, string> = {
 export function claimLabel(key: string): string {
   return CLAIM_LABELS[key] ?? key;
 }
-
-export const MOCK_VP_TOKEN_PREFIX = 'mock-pew.';

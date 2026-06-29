@@ -5,8 +5,7 @@ export type LogCategory =
   | 'claims'
   | 'cert'
   | 'build'
-  | 'http'
-  | 'settings';
+  | 'http';
 
 export interface ActivityLogEntry {
   id: string;

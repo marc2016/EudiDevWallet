@@ -1,21 +1,6 @@
-import { MOCK_VP_TOKEN_PREFIX } from '../log/activityLog';
 import type { AuthorizationRequest, BuiltResponse } from '../types/openid4vp';
-
-function base64urlJson(obj: unknown): string {
-  const json = JSON.stringify(obj);
-  return btoa(json).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-function buildMockVpToken(claims: Record<string, string>, nonce?: string): string {
-  const payload = {
-    _mock: true,
-    credentialSubject: claims,
-    nonce,
-  };
-  const header = base64urlJson({ alg: 'none', typ: 'vp+jwt' });
-  const body = base64urlJson(payload);
-  return `${MOCK_VP_TOKEN_PREFIX}${header}.${body}.`;
-}
+import { buildMockSdJwtVpToken } from './buildMockSdJwt';
+import { encryptDirectPostJwtResponse } from './encryptAuthorizationResponse';
 
 function buildPresentationSubmission(request: AuthorizationRequest) {
   const defId = request.presentation_definition?.id ?? 'pd';
@@ -34,10 +19,8 @@ function buildPresentationSubmission(request: AuthorizationRequest) {
   };
 }
 
-function buildUnsignedJwt(payload: Record<string, unknown>): string {
-  const header = base64urlJson({ alg: 'none', typ: 'oauth-authz-resp+jwt' });
-  const body = base64urlJson(payload);
-  return `${header}.${body}.`;
+function resolveVct(request: AuthorizationRequest): string | undefined {
+  return request.dcql_query?.credentials?.[0]?.meta?.vct_values?.[0];
 }
 
 export async function buildResponse(
@@ -45,7 +28,12 @@ export async function buildResponse(
   claims: Record<string, string>,
   mode: 'direct_post' | 'direct_post_jwt' | 'raw_json',
 ): Promise<BuiltResponse> {
-  const vpToken = buildMockVpToken(claims, request.nonce);
+  const vpToken = await buildMockSdJwtVpToken({
+    claims,
+    nonce: request.nonce,
+    audience: request.client_id,
+    vct: resolveVct(request),
+  });
   const presentationSubmission = buildPresentationSubmission(request);
   const state = request.state ?? '';
 
@@ -63,11 +51,7 @@ export async function buildResponse(
   }
 
   if (mode === 'direct_post_jwt') {
-    const inner = buildUnsignedJwt({
-      vp_token: vpToken,
-      presentation_submission: presentationSubmission,
-      state,
-    });
+    const inner = await encryptDirectPostJwtResponse(request, vpToken);
     const params = new URLSearchParams({ response: inner });
     return {
       contentType: 'application/x-www-form-urlencoded',

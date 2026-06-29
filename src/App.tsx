@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Toast } from 'primereact/toast';
-import { Tag } from 'primereact/tag';
 import { AppHeader } from './components/AppHeader';
 import { WalletSettings } from './components/WalletSettings';
 import { RequestInput } from './components/RequestInput';
@@ -14,6 +13,7 @@ import { extractClaims } from './lib/extractClaims';
 import { validateCertificates } from './lib/validateCertificates';
 import { buildResponse } from './lib/buildResponse';
 import { sendResponse } from './lib/sendResponse';
+import { formatVerifierError } from './lib/formatVerifierError';
 import {
   loadCertificateMode,
   loadResponseMode,
@@ -119,7 +119,8 @@ function AppContent() {
         ? `Erfolg: HTTP ${result.status}`
         : result.corsError
           ? 'CORS-Fehler — siehe README'
-          : result.error ?? `HTTP ${result.status}`;
+          : result.error ??
+            formatVerifierError(result.status, result.responseBody, request.response_uri);
 
       setLastResult({ ok: result.ok, message });
       toast.current?.show({
@@ -145,12 +146,6 @@ function AppContent() {
     return undefined;
   }, [request, certResult, claims]);
 
-  const statusTag = request
-    ? certResult?.blocksApproval
-      ? { label: 'Blockiert', severity: 'danger' as const }
-      : { label: 'Bereit', severity: 'success' as const }
-    : { label: 'Warte auf Anfrage', severity: 'secondary' as const };
-
   return (
     <div className="app-shell">
       <Toast ref={toast} />
@@ -159,10 +154,6 @@ function AppContent() {
       <div className="app-body">
         <div className="app-main">
           <div className="workflow-column">
-          <div className="workflow-sticky">
-            <div className="flex justify-content-end mb-2">
-              <Tag value={statusTag.label} severity={statusTag.severity} />
-            </div>
             <WalletSettings
               certificateMode={certificateMode}
               responseMode={responseMode}
@@ -174,8 +165,7 @@ function AppContent() {
               }}
               onResponseModeChange={setResponseMode}
             />
-          </div>
-          <RequestInput onAnalyze={handleAnalyze} loading={analyzing} />
+            <RequestInput onAnalyze={handleAnalyze} loading={analyzing} />
           <RequestSummary request={request} certMode={certificateMode} certResult={certResult} />
           <IdentityPicker
             claims={claims}

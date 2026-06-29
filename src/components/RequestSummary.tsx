@@ -36,6 +36,13 @@ export function RequestSummary({ request, certMode, certResult }: RequestSummary
 
   return (
     <Card title="2. Anfrage-Details" className="mb-2">
+      {request.response_uri?.includes('eudiplo.eudi-wallet.org') && (
+        <Message
+          severity="info"
+          className="mb-2 w-full"
+          text="EUDI-Playground: Mock-Credentials werden strukturell akzeptiert, aber nicht von der Trust List des Verifiers. Für einen vollständigen Erfolg sind echte Wallet-Credentials nötig."
+        />
+      )}
       <Row label="client_id" value={request.client_id} />
       <Row label="response_uri" value={request.response_uri} />
       <Row label="response_mode" value={request.response_mode} />

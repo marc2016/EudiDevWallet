@@ -13,16 +13,12 @@ interface ActivityLogContextValue {
   entries: ActivityLogEntry[];
   log: (level: LogLevel, category: LogCategory, message: string, details?: unknown) => void;
   clear: () => void;
-  filter: LogCategory | 'all';
-  setFilter: (f: LogCategory | 'all') => void;
-  filteredEntries: ActivityLogEntry[];
 }
 
 const ActivityLogContext = createContext<ActivityLogContextValue | null>(null);
 
 export function ActivityLogProvider({ children }: { children: ReactNode }) {
   const [entries, setEntries] = useState<ActivityLogEntry[]>([]);
-  const [filter, setFilter] = useState<LogCategory | 'all'>('all');
 
   const log = useCallback(
     (level: LogLevel, category: LogCategory, message: string, details?: unknown) => {
@@ -33,14 +29,9 @@ export function ActivityLogProvider({ children }: { children: ReactNode }) {
 
   const clear = useCallback(() => setEntries([]), []);
 
-  const filteredEntries = useMemo(
-    () => (filter === 'all' ? entries : entries.filter((e) => e.category === filter)),
-    [entries, filter],
-  );
-
   const value = useMemo(
-    () => ({ entries, log, clear, filter, setFilter, filteredEntries }),
-    [entries, log, clear, filter, filteredEntries],
+    () => ({ entries, log, clear }),
+    [entries, log, clear],
   );
 
   return (

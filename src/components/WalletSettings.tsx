@@ -7,7 +7,6 @@ import {
   saveResponseMode,
 } from '../settings/walletSettings';
 import type { CertificateMode, ResponseMode } from '../types/openid4vp';
-import { useActivityLog } from '../log/ActivityLogContext';
 
 interface WalletSettingsProps {
   certificateMode: CertificateMode;
@@ -22,8 +21,6 @@ export function WalletSettings({
   onCertificateModeChange,
   onResponseModeChange,
 }: WalletSettingsProps) {
-  const { log } = useActivityLog();
-
   const certOptions = CERTIFICATE_MODE_OPTIONS.map((o) => ({
     label: o.label,
     value: o.value,
@@ -42,7 +39,6 @@ export function WalletSettings({
               if (e.value) {
                 saveCertificateMode(e.value);
                 onCertificateModeChange(e.value);
-                log('info', 'settings', `Zertifikatsmodus: ${e.value}`);
               }
             }}
             className="settings-select"
@@ -57,7 +53,6 @@ export function WalletSettings({
               if (e.value) {
                 saveResponseMode(e.value);
                 onResponseModeChange(e.value);
-                log('info', 'settings', `Antwortformat: ${e.value}`);
               }
             }}
             className="settings-select"
