@@ -26,6 +26,27 @@ async function fetchPresentationDefinition(uri: string, log?: LogFn) {
   }
 }
 
+async function fetchClientMetadata(uri: string, log?: LogFn) {
+  const start = performance.now();
+  try {
+    const res = await fetch(uri);
+    const duration = Math.round(performance.now() - start);
+    log?.('info', 'fetch', `client_metadata_uri → ${res.status}`, {
+      url: uri,
+      status: res.status,
+      durationMs: duration,
+    });
+    if (!res.ok) return undefined;
+    return (await res.json()) as Record<string, unknown>;
+  } catch (err) {
+    log?.('error', 'fetch', 'client_metadata_uri fehlgeschlagen', {
+      url: uri,
+      error: String(err),
+    });
+    return undefined;
+  }
+}
+
 export async function fetchRequestObject(
   requestUri: string,
   log?: LogFn,
@@ -82,6 +103,11 @@ export async function resolveAuthorizationRequest(
   if (request.presentation_definition_uri && !request.presentation_definition) {
     const pd = await fetchPresentationDefinition(request.presentation_definition_uri, log);
     if (pd) request = { ...request, presentation_definition: pd };
+  }
+
+  if (request.client_metadata_uri && !request.client_metadata) {
+    const cm = await fetchClientMetadata(request.client_metadata_uri, log);
+    if (cm) request = { ...request, client_metadata: cm };
   }
 
   return request;

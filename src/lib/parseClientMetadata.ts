@@ -8,6 +8,9 @@ export interface ClientMetadata {
 export function parseClientMetadata(
   request: AuthorizationRequest,
 ): ClientMetadata | undefined {
+  if (request.client_metadata) {
+    return request.client_metadata as ClientMetadata;
+  }
   const raw =
     request.requestJwtPayload?.client_metadata ?? request.rawParams?.client_metadata;
   if (!raw) return undefined;

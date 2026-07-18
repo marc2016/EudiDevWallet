@@ -59,6 +59,8 @@ export interface AuthorizationRequest {
   presentation_definition_uri?: string;
   dcql_query?: DcqlQuery;
   request_uri?: string;
+  client_metadata?: Record<string, unknown>;
+  client_metadata_uri?: string;
   rawParams?: Record<string, string>;
   requestJwt?: string;
   requestJwtHeader?: Record<string, unknown>;

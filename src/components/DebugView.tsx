@@ -45,10 +45,12 @@ export function DebugView({ flow, toast }: DebugViewProps) {
               claims={flow.claims}
               selectedIdentityId={flow.selectedIdentityId}
               claimValues={flow.claimValues}
+              selectedClaims={flow.selectedClaims}
               onIdentityChange={flow.handleIdentityChange}
               onClaimChange={(key, value) =>
                 flow.setClaimValues((prev) => ({ ...prev, [key]: value }))
               }
+              onToggleClaimSelection={flow.toggleClaimSelection}
             />
             <ActionBar
               onApprove={flow.handleApprove}

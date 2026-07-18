@@ -46,6 +46,7 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     useState<CredentialFormatSetting>(loadCredentialFormat);
   const [request, setRequest] = useState<AuthorizationRequest | null>(null);
   const [claims, setClaims] = useState<ExtractedClaim[]>([]);
+  const [selectedClaims, setSelectedClaims] = useState<Record<string, boolean>>({});
   const [certResult, setCertResult] = useState<CertificateValidationResult | null>(null);
   const [selectedIdentityId, setSelectedIdentityId] = useState(mockIdentities[0].id);
   const [claimValues, setClaimValues] = useState<Record<string, string>>({});
@@ -87,6 +88,12 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
       setClaims(extracted);
       log('info', 'claims', `${extracted.length} Claims extrahiert`, extracted);
 
+      const initialSelected: Record<string, boolean> = {};
+      for (const c of extracted) {
+        initialSelected[c.key] = true;
+      }
+      setSelectedClaims(initialSelected);
+
       const cert = await validateCertificates(resolved, certificateMode, log);
       setCertResult(cert);
 
@@ -110,6 +117,13 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     applyIdentity(id, claims);
   };
 
+  const toggleClaimSelection = useCallback((key: string) => {
+    setSelectedClaims((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  }, []);
+
   const handleApprove = async (): Promise<boolean> => {
     if (!request?.response_uri) return false;
     setSubmitting(true);
@@ -119,12 +133,14 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     try {
       const mode = resolveResponseMode(responseMode, request.response_mode);
       const vpFormat = resolveCredentialFormat(credentialFormat, request);
-      const selectedClaims: Record<string, string> = {};
+      const selectedClaimsData: Record<string, string> = {};
       for (const c of claims) {
-        if (claimValues[c.key]) selectedClaims[c.key] = claimValues[c.key];
+        if (claimValues[c.key] && selectedClaims[c.key] !== false) {
+          selectedClaimsData[c.key] = claimValues[c.key];
+        }
       }
 
-      const built = await buildResponse(request, selectedClaims, mode, vpFormat);
+      const built = await buildResponse(request, selectedClaimsData, mode, vpFormat);
       log('info', 'build', 'Antwort gebaut', {
         mode: built.mode,
         contentType: built.contentType,
@@ -179,6 +195,7 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     setClaims([]);
     setCertResult(null);
     setClaimValues({});
+    setSelectedClaims({});
     setLastResult(undefined);
     setLastError(undefined);
     setSelectedIdentityId(mockIdentities[0].id);
@@ -198,6 +215,7 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     credentialFormat,
     request,
     claims,
+    selectedClaims,
     certResult,
     selectedIdentityId,
     claimValues,
@@ -208,6 +226,7 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     disabledReason,
     handleAnalyze,
     handleIdentityChange,
+    toggleClaimSelection,
     handleApprove,
     setCertificateMode,
     setResponseMode,

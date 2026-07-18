@@ -48,6 +48,9 @@ export function parseRequestInput(input: string, log?: LogFn): AuthorizationRequ
   const dcql_query = parseJsonField<AuthorizationRequest['dcql_query']>(
     params.get('dcql_query') ?? undefined,
   );
+  const client_metadata = parseJsonField<Record<string, unknown>>(
+    params.get('client_metadata') ?? undefined,
+  );
 
   return {
     client_id: params.get('client_id') ?? undefined,
@@ -60,6 +63,8 @@ export function parseRequestInput(input: string, log?: LogFn): AuthorizationRequ
     presentation_definition_uri: params.get('presentation_definition_uri') ?? undefined,
     dcql_query,
     request_uri: params.get('request_uri') ?? undefined,
+    client_metadata,
+    client_metadata_uri: params.get('client_metadata_uri') ?? undefined,
     rawParams,
   };
 }
@@ -83,6 +88,13 @@ export function mergeAuthorizationRequest(
         ? parseJsonField<AuthorizationRequest['dcql_query']>(jwtPayload.dcql_query)
         : base.dcql_query;
 
+  const cm =
+    typeof jwtPayload.client_metadata === 'object' && jwtPayload.client_metadata !== null
+      ? (jwtPayload.client_metadata as Record<string, unknown>)
+      : typeof jwtPayload.client_metadata === 'string'
+        ? parseJsonField<Record<string, unknown>>(jwtPayload.client_metadata)
+        : base.client_metadata;
+
   return {
     ...base,
     client_id: (jwtPayload.client_id as string) ?? base.client_id,
@@ -95,6 +107,9 @@ export function mergeAuthorizationRequest(
     presentation_definition_uri:
       (jwtPayload.presentation_definition_uri as string) ?? base.presentation_definition_uri,
     dcql_query: dcql,
+    client_metadata: cm,
+    client_metadata_uri:
+      (jwtPayload.client_metadata_uri as string) ?? base.client_metadata_uri,
     requestJwt,
     requestJwtHeader: jwtHeader,
     requestJwtPayload: jwtPayload,

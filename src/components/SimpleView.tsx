@@ -4,6 +4,7 @@ import { mdiCheckCircleOutline } from '@mdi/js';
 import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
+import { Checkbox } from 'primereact/checkbox';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { mockIdentities } from '../data/mockIdentities';
 import type { useWalletFlow } from '../hooks/useWalletFlow';
@@ -134,15 +135,26 @@ export function SimpleView({ flow }: SimpleViewProps) {
             <table className="simple-review-table">
               <thead>
                 <tr>
+                  <th style={{ width: '3rem' }}>Freigabe</th>
                   <th>Anfrage</th>
                   <th>Antwort</th>
                 </tr>
               </thead>
               <tbody>
                 {flow.claims.map((c) => (
-                  <tr key={c.key}>
-                    <td>{c.label}</td>
-                    <td>{flow.claimValues[c.key] || '—'}</td>
+                  <tr key={c.key} style={{ opacity: flow.selectedClaims[c.key] === false ? 0.6 : 1 }}>
+                    <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                      <Checkbox
+                        checked={flow.selectedClaims[c.key] !== false}
+                        onChange={() => flow.toggleClaimSelection(c.key)}
+                      />
+                    </td>
+                    <td style={{ textDecoration: flow.selectedClaims[c.key] === false ? 'line-through' : 'none' }}>
+                      {c.label}
+                    </td>
+                    <td style={{ color: flow.selectedClaims[c.key] === false ? 'var(--text-color-secondary)' : 'inherit' }}>
+                      {flow.claimValues[c.key] || '—'}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -189,12 +201,14 @@ export function SimpleView({ flow }: SimpleViewProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    {flow.claims.map((c) => (
-                      <tr key={c.key}>
-                        <td>{c.label}</td>
-                        <td>{flow.claimValues[c.key] || '—'}</td>
-                      </tr>
-                    ))}
+                    {flow.claims
+                      .filter((c) => flow.selectedClaims[c.key] !== false)
+                      .map((c) => (
+                        <tr key={c.key}>
+                          <td>{c.label}</td>
+                          <td>{flow.claimValues[c.key] || '—'}</td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               ) : null}
