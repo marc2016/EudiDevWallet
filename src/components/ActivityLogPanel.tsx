@@ -1,10 +1,12 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Timeline } from 'primereact/timeline';
 import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
+import { Checkbox } from 'primereact/checkbox';
 import { Accordion, AccordionTab } from 'primereact/accordion';
 import { useActivityLog } from '../log/ActivityLogContext';
 import { formatLogDetails, formatLogTime } from '../log/activityLog';
+import { loadClearLogOnRequest, saveClearLogOnRequest } from '../settings/walletSettings';
 import type { ActivityLogEntry, LogLevel } from '../types/openid4vp';
 
 function levelIcon(level: LogLevel): string {
@@ -68,10 +70,16 @@ function TimelineItem({ entry }: { entry: ActivityLogEntry }) {
 export function ActivityLogPanel() {
   const { entries, clear } = useActivityLog();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [clearOnRequest, setClearOnRequest] = useState<boolean>(loadClearLogOnRequest);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [entries.length]);
+
+  const handleClearOnRequestChange = (checked: boolean) => {
+    setClearOnRequest(checked);
+    saveClearLogOnRequest(checked);
+  };
 
   const exportJson = () => {
     const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
@@ -96,6 +104,17 @@ export function ActivityLogPanel() {
           <Button icon="pi pi-download" severity="secondary" size="small" onClick={exportJson} tooltip="Export JSON" />
           <Button icon="pi pi-copy" severity="secondary" size="small" onClick={copyLog} tooltip="Kopieren" />
         </div>
+      </div>
+
+      <div className="flex align-items-center mb-3 gap-2">
+        <Checkbox
+          inputId="clear-on-request"
+          onChange={(e) => handleClearOnRequestChange(Boolean(e.checked))}
+          checked={clearOnRequest}
+        />
+        <label htmlFor="clear-on-request" className="text-sm font-medium select-none cursor-pointer text-color-secondary">
+          Protokoll bei neuer Anfrage löschen
+        </label>
       </div>
 
       <div className="log-panel-content">

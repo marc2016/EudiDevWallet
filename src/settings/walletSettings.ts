@@ -5,9 +5,20 @@ const RESPONSE_KEY = 'edw_response_mode';
 const CREDENTIAL_FORMAT_KEY = 'edw_credential_format';
 const VIEW_KEY = 'edw_view_mode';
 const COLOR_SCHEME_KEY = 'edw_color_scheme';
+const CLEAR_LOG_ON_REQUEST_KEY = 'edw_clear_log_on_request';
 
 export type ViewMode = 'simple' | 'debug';
 export type ColorScheme = 'light' | 'dark';
+
+export function loadClearLogOnRequest(): boolean {
+  const v = localStorage.getItem(CLEAR_LOG_ON_REQUEST_KEY);
+  if (v === null) return true;
+  return v === 'true';
+}
+
+export function saveClearLogOnRequest(value: boolean): void {
+  localStorage.setItem(CLEAR_LOG_ON_REQUEST_KEY, String(value));
+}
 
 export const CERTIFICATE_MODE_OPTIONS = [
   { label: 'Aus', value: 'off' as CertificateMode },

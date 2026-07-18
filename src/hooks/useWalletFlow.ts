@@ -10,6 +10,7 @@ import { sendResponse } from '../lib/sendResponse';
 import { formatVerifierError } from '../lib/formatVerifierError';
 import {
   loadCertificateMode,
+  loadClearLogOnRequest,
   loadCredentialFormat,
   loadResponseMode,
   resolveResponseMode,
@@ -37,7 +38,7 @@ interface UseWalletFlowOptions {
 
 export function useWalletFlow(options: UseWalletFlowOptions = {}) {
   const { toast, toastMode = 'all' } = options;
-  const { log } = useActivityLog();
+  const { log, clear } = useActivityLog();
 
   const [certificateMode, setCertificateModeState] = useState<CertificateMode>(loadCertificateMode);
   const [responseMode, setResponseModeState] = useState<ResponseMode>(loadResponseMode);
@@ -76,6 +77,9 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     setLastResult(undefined);
     setLastError(undefined);
     try {
+      if (loadClearLogOnRequest()) {
+        clear();
+      }
       const resolved = await resolveAuthorizationRequest(input, log);
       setRequest(resolved);
 
