@@ -26,13 +26,26 @@ export function RequestInput({ onAnalyze, loading, settings }: RequestInputProps
         className="w-full font-mono text-sm"
         placeholder="openid4vp://?client_id=…&response_uri=…"
       />
-      <div className="mt-2">
+      <div className="mt-2 flex gap-2">
         <Button
           label="Analysieren"
           icon="pi pi-search"
           onClick={() => onAnalyze(value)}
           loading={loading}
           disabled={!value.trim()}
+        />
+        <Button
+          label="Einfügen"
+          icon="pi pi-file-import"
+          onClick={async () => {
+            try {
+              const text = await navigator.clipboard.readText();
+              setValue(text);
+            } catch (err) {
+              console.error('Failed to read clipboard: ', err);
+            }
+          }}
+          severity="secondary"
         />
       </div>
       {settings && (

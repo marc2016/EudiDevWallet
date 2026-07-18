@@ -103,6 +103,19 @@ export function SimpleView({ flow }: SimpleViewProps) {
               }}
             />
             <Button
+              icon="pi pi-file-import"
+              onClick={async () => {
+                try {
+                  const text = await navigator.clipboard.readText();
+                  setUrl(text);
+                } catch (err) {
+                  console.error('Failed to read clipboard: ', err);
+                }
+              }}
+              aria-label="Aus Zwischenablage einfügen"
+              severity="secondary"
+            />
+            <Button
               icon="pi pi-arrow-right"
               onClick={() => void handleAnalyze()}
               disabled={!url.trim()}
