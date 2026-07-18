@@ -33,6 +33,21 @@ import type {
 
 export type ToastMode = 'all' | 'errors-only' | 'none';
 
+function decodeBase64Url(str: string): Record<string, unknown> | null {
+  try {
+    const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonStr = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonStr) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
 interface UseWalletFlowOptions {
   toast?: RefObject<Toast | null>;
   toastMode?: ToastMode;
@@ -145,11 +160,81 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
       }
 
       const built = await buildResponse(request, selectedClaimsData, mode, vpFormat);
-      log('info', 'build', 'Antwort gebaut', {
+
+      const decodedDetails: Record<string, unknown> = {
         mode: built.mode,
         contentType: built.contentType,
         credentialFormat: vpFormat,
-      });
+      };
+
+      if (mode === 'raw_json') {
+        decodedDetails.body = built.body;
+      } else if (mode === 'direct_post_jwt') {
+        const params = new URLSearchParams(built.body as string);
+        const jwe = params.get('response') ?? '';
+        decodedDetails.encryptedResponseJWE = jwe;
+
+        try {
+          if (vpFormat === 'dc+sd-jwt') {
+            const vpTokenPlain = await buildResponse(request, selectedClaimsData, 'direct_post', vpFormat);
+            const directPostParams = new URLSearchParams(vpTokenPlain.body as string);
+            const plainVpToken = directPostParams.get('vp_token') ?? '';
+            
+            const parts = plainVpToken.split('~');
+            const issuerPayload = parts[0] ? decodeBase64Url(parts[0].split('.')[1] ?? '') : null;
+            const kbPayload = parts[1] ? decodeBase64Url(parts[1].split('.')[1] ?? '') : null;
+            
+            decodedDetails.unencryptedPayload = {
+              state: request.state ?? '',
+              vp_token: {
+                [request.dcql_query?.credentials?.[0]?.id ?? 'credential']: [
+                  {
+                    issuerJwt: issuerPayload,
+                    keyBindingJwt: kbPayload,
+                    rawVpToken: plainVpToken,
+                  }
+                ]
+              }
+            };
+          } else {
+            const vpTokenPlain = await buildResponse(request, selectedClaimsData, 'direct_post', vpFormat);
+            const directPostParams = new URLSearchParams(vpTokenPlain.body as string);
+            const plainVpToken = directPostParams.get('vp_token') ?? '';
+            decodedDetails.unencryptedPayload = {
+              state: request.state ?? '',
+              vp_token: {
+                [request.dcql_query?.credentials?.[0]?.id ?? 'credential']: [plainVpToken]
+              }
+            };
+          }
+        } catch (e) {
+          // ignore fallback
+        }
+      } else {
+        const params = new URLSearchParams(built.body as string);
+        const vpToken = params.get('vp_token') ?? '';
+        const submission = params.get('presentation_submission') ?? '';
+        
+        try {
+          decodedDetails.presentationSubmission = JSON.parse(submission);
+        } catch {
+          decodedDetails.presentationSubmission = submission;
+        }
+
+        if (vpFormat === 'dc+sd-jwt') {
+          const parts = vpToken.split('~');
+          const issuerPayload = parts[0] ? decodeBase64Url(parts[0].split('.')[1] ?? '') : null;
+          const kbPayload = parts[1] ? decodeBase64Url(parts[1].split('.')[1] ?? '') : null;
+          decodedDetails.vpTokenDecoded = {
+            issuerJwt: issuerPayload,
+            keyBindingJwt: kbPayload,
+          };
+        } else {
+          decodedDetails.vpTokenBase64Url = vpToken;
+        }
+      }
+
+      log('info', 'build', 'Antwort gebaut', decodedDetails);
 
       const result = await sendResponse(request.response_uri, built, log);
 
