@@ -12,6 +12,8 @@ interface IdentityPickerProps {
   selectedIdentityId: string;
   claimValues: Record<string, string>;
   selectedClaims: Record<string, boolean>;
+  simulateOneTimeUse?: boolean;
+  remainingCredentials?: number;
   onIdentityChange: (id: string) => void;
   onClaimChange: (key: string, value: string) => void;
   onToggleClaimSelection: (key: string) => void;
@@ -22,6 +24,8 @@ export function IdentityPicker({
   selectedIdentityId,
   claimValues,
   selectedClaims,
+  simulateOneTimeUse,
+  remainingCredentials,
   onIdentityChange,
   onClaimChange,
   onToggleClaimSelection,
@@ -58,6 +62,12 @@ export function IdentityPicker({
             className="flex-1"
           />
         </div>
+
+        {simulateOneTimeUse && remainingCredentials !== undefined && (
+          <div className="flex align-items-center p-2 border-round text-xs font-semibold" style={{ backgroundColor: 'var(--primary-color-thin, rgba(0,0,0,0.05))', color: 'var(--primary-color)', marginLeft: '7.5rem' }}>
+            <span>🔋 Batch-Status: {remainingCredentials} / 5 verbleibend</span>
+          </div>
+        )}
 
         {claims.map((c) => (
           <div key={c.key} className="flex align-items-center gap-2" style={{ opacity: selectedClaims[c.key] === false ? 0.6 : 1 }}>

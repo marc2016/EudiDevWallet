@@ -13,10 +13,12 @@ import {
   loadClearLogOnRequest,
   loadCredentialFormat,
   loadResponseMode,
+  loadSimulateOneTimeUse,
   resolveResponseMode,
   saveCertificateMode,
   saveCredentialFormat,
   saveResponseMode,
+  saveSimulateOneTimeUse,
 } from '../settings/walletSettings';
 import { resolveCredentialFormat } from '../lib/resolveCredentialFormat';
 import { mockIdentities } from '../data/mockIdentities';
@@ -44,6 +46,8 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
   const [responseMode, setResponseModeState] = useState<ResponseMode>(loadResponseMode);
   const [credentialFormat, setCredentialFormatState] =
     useState<CredentialFormatSetting>(loadCredentialFormat);
+  const [simulateOneTimeUse, setSimulateOneTimeUseState] = useState<boolean>(loadSimulateOneTimeUse);
+  const [remainingCredentials, setRemainingCredentials] = useState<number>(5);
   const [request, setRequest] = useState<AuthorizationRequest | null>(null);
   const [claims, setClaims] = useState<ExtractedClaim[]>([]);
   const [selectedClaims, setSelectedClaims] = useState<Record<string, boolean>>({});
@@ -159,6 +163,27 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
       setLastResult({ ok: result.ok, message });
       showToast(result.ok ? 'success' : 'error', result.ok ? 'Freigegeben' : 'Fehler', message);
       if (!result.ok) setLastError(message);
+
+      if (result.ok && simulateOneTimeUse) {
+        setRemainingCredentials((prev) => {
+          const nextVal = prev - 1;
+          log('info', 'claims', `PID-Credential verbraucht und gelöscht (Unlinkability). Verbleibende Credentials im Batch: ${nextVal}/5.`);
+          
+          if (nextVal <= 1) {
+            log('info', 'fetch', 'Automatischer Batch-Refresh gestartet (Zähler <= 1). DPoP-Proof wird erzeugt...');
+            setTimeout(() => {
+              log('info', 'fetch', 'pp_refresh_token an Credentials-Endpoint gesendet.');
+              setTimeout(() => {
+                log('success', 'fetch', 'Neuer Batch mit 5 PID-Credentials erfolgreich empfangen.');
+                setRemainingCredentials(5);
+                showToast('success', 'Batch erneuert', '5 neue PID-Credentials erhalten.');
+              }, 800);
+            }, 800);
+          }
+          return nextVal;
+        });
+      }
+
       return result.ok;
     } catch (err) {
       const message = String(err);
@@ -190,6 +215,11 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     saveCredentialFormat(format);
   };
 
+  const setSimulateOneTimeUse = (val: boolean) => {
+    setSimulateOneTimeUseState(val);
+    saveSimulateOneTimeUse(val);
+  };
+
   const resetFlow = () => {
     setRequest(null);
     setClaims([]);
@@ -213,6 +243,8 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     certificateMode,
     responseMode,
     credentialFormat,
+    simulateOneTimeUse,
+    remainingCredentials,
     request,
     claims,
     selectedClaims,
@@ -231,6 +263,7 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     setCertificateMode,
     setResponseMode,
     setCredentialFormat,
+    setSimulateOneTimeUse,
     setClaimValues,
     resetFlow,
   };

@@ -6,6 +6,7 @@ const CREDENTIAL_FORMAT_KEY = 'edw_credential_format';
 const VIEW_KEY = 'edw_view_mode';
 const COLOR_SCHEME_KEY = 'edw_color_scheme';
 const CLEAR_LOG_ON_REQUEST_KEY = 'edw_clear_log_on_request';
+const SIMULATE_ONE_TIME_USE_KEY = 'edw_simulate_one_time_use';
 
 export type ViewMode = 'simple' | 'debug';
 export type ColorScheme = 'light' | 'dark';
@@ -18,6 +19,16 @@ export function loadClearLogOnRequest(): boolean {
 
 export function saveClearLogOnRequest(value: boolean): void {
   localStorage.setItem(CLEAR_LOG_ON_REQUEST_KEY, String(value));
+}
+
+export function loadSimulateOneTimeUse(): boolean {
+  const v = localStorage.getItem(SIMULATE_ONE_TIME_USE_KEY);
+  if (v === null) return false;
+  return v === 'true';
+}
+
+export function saveSimulateOneTimeUse(value: boolean): void {
+  localStorage.setItem(SIMULATE_ONE_TIME_USE_KEY, String(value));
 }
 
 export const CERTIFICATE_MODE_OPTIONS = [

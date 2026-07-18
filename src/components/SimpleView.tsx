@@ -168,6 +168,12 @@ export function SimpleView({ flow }: SimpleViewProps) {
                 className="w-full"
                 placeholder="Identität wählen"
               />
+              {flow.simulateOneTimeUse && (
+                <div className="flex align-items-center justify-content-between p-2 border-round text-xs font-semibold" style={{ backgroundColor: 'var(--primary-color-thin, rgba(0,0,0,0.05))', color: 'var(--primary-color)' }}>
+                  <span>🔋 Batch-Status:</span>
+                  <span>{flow.remainingCredentials} / 5 verbleibend</span>
+                </div>
+              )}
               {flow.disabledReason && (
                 <p className="simple-hint text-color-secondary">{flow.disabledReason}</p>
               )}
