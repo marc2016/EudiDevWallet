@@ -443,17 +443,33 @@ body {
 }
 
 @media (min-width: 992px) {
+  .app-shell {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .app-body {
+    height: 100%;
+    overflow: hidden;
+  }
+
   .app-main {
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
     align-items: stretch;
-    min-height: calc(100dvh - var(--app-header-height));
+    height: calc(100dvh - var(--app-header-height));
+    overflow: hidden;
+  }
+
+  .workflow-column {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .log-column {
-    position: sticky;
-    top: var(--app-header-height);
     align-self: stretch;
-    min-height: calc(100dvh - var(--app-header-height));
+    height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
   }
