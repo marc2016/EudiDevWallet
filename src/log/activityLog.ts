@@ -45,7 +45,6 @@ export const CLAIM_LABELS: Record<string, string> = {
   address: 'Adresse',
   national_id: 'Personalausweis-Nr.',
   nationalities: 'Staatsangehörigkeit',
-  'eu.europa.ec.eudi.pid.1': 'Personalausweis (PID)',
 };
 
 /** Mock-Identität: alternative Keys auf gespeicherte Claim-Namen abbilden */

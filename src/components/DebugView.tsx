@@ -30,8 +30,10 @@ export function DebugView({ flow, toast }: DebugViewProps) {
               settings={{
                 certificateMode: flow.certificateMode,
                 responseMode: flow.responseMode,
+                credentialFormat: flow.credentialFormat,
                 onCertificateModeChange: flow.setCertificateMode,
                 onResponseModeChange: flow.setResponseMode,
+                onCredentialFormatChange: flow.setCredentialFormat,
               }}
             />
             <RequestSummary

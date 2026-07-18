@@ -59,7 +59,7 @@ export async function buildMockSdJwtVpToken(options: MockSdJwtOptions): Promise<
       typ: 'dc+sd-jwt',
       x5c: mockIssuer.x5c,
     })
-    .setIssuer('https://pocketeudiwallet.dev/mock-issuer')
+    .setIssuer('https://eudidevwallet.dev/mock-issuer')
     .setIssuedAt()
     .setExpirationTime('1h')
     .sign(issuerKey);

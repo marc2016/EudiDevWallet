@@ -25,8 +25,8 @@ export function AppHeader() {
       ref={ref}
       className="app-header flex align-items-center gap-2 px-3 py-2"
     >
-      <img src="/logo.png" alt="PocketEudiWallet" height={36} />
-      <span className="text-xl font-semibold">PocketEudiWallet</span>
+      <img src="/logo.png" alt="EudiDevWallet" height={36} />
+      <span className="text-xl font-semibold">EudiDevWallet</span>
     </div>
   );
 }

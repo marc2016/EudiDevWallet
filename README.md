@@ -1,8 +1,8 @@
-![PocketEudiWallet](public/logo.png)
+![EudiDevWallet](public/logo.png)
 
-# PocketEudiWallet
+# EudiDevWallet
 
-PocketEudiWallet ist eine leichtgewichtige, lokale Web-Anwendung (React), die als minimalistische Simulation einer europäischen digitalen Identitäts-Wallet (EUDI Wallet) dient. Sie wurde entwickelt, um den Integrationsprozess von **OpenID4VP**-Abfragen in Hauptanwendungen zu testen — ohne komplexe Krypto-Infrastrukturen oder externe Netzwerk-Tunnel.
+EudiDevWallet ist eine leichtgewichtige, lokale Web-Anwendung (React), die als minimalistische Simulation einer europäischen digitalen Identitäts-Wallet (EUDI Wallet) dient. Sie wurde entwickelt, um den Integrationsprozess von **OpenID4VP**-Abfragen in Hauptanwendungen zu testen — ohne komplexe Krypto-Infrastrukturen oder externe Netzwerk-Tunnel.
 
 > **Nur für lokale Entwicklung.** Keine produktionsreife oder zertifizierte EUDI-Wallet.
 
@@ -18,7 +18,7 @@ PocketEudiWallet ist eine leichtgewichtige, lokale Web-Anwendung (React), die al
 
 ```bash
 git clone <repository-url>
-cd PocketEudiWallet
+cd EudiDevWallet
 npm install
 npm run dev
 ```
@@ -70,7 +70,7 @@ docker compose --profile prod up --build
 
 ### Mock-`vp_token`
 
-Mock-Tokens beginnen mit dem Präfix `mock-pew.` und enthalten ein JSON-Payload mit `_mock: true`. Im Dev-Modus kann die Hauptanwendung die Signaturprüfung überspringen.
+Mock-Tokens beginnen mit dem Präfix `mock-edw.` und enthalten ein JSON-Payload mit `_mock: true`. Im Dev-Modus kann die Hauptanwendung die Signaturprüfung überspringen.
 
 ## Zertifikatsmodi
 
@@ -101,7 +101,7 @@ app.use(cors({
 
 ```javascript
 function isMockVpToken(vpToken) {
-  return typeof vpToken === 'string' && vpToken.startsWith('mock-pew.');
+  return typeof vpToken === 'string' && vpToken.startsWith('mock-edw.');
 }
 
 app.post('/callback', (req, res) => {
@@ -126,7 +126,7 @@ Für Tests ohne eigene Hauptanwendung:
 npm run mock-verifier
 ```
 
-Öffne http://localhost:3001 und kopiere die generierte URL in PocketEudiWallet.
+Öffne http://localhost:3001 und kopiere die generierte URL in EudiDevWallet.
 
 ## Test-Fixtures
 

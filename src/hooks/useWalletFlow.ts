@@ -10,16 +10,20 @@ import { sendResponse } from '../lib/sendResponse';
 import { formatVerifierError } from '../lib/formatVerifierError';
 import {
   loadCertificateMode,
+  loadCredentialFormat,
   loadResponseMode,
   resolveResponseMode,
   saveCertificateMode,
+  saveCredentialFormat,
   saveResponseMode,
 } from '../settings/walletSettings';
+import { resolveCredentialFormat } from '../lib/resolveCredentialFormat';
 import { mockIdentities } from '../data/mockIdentities';
 import type {
   AuthorizationRequest,
   CertificateMode,
   CertificateValidationResult,
+  CredentialFormatSetting,
   ExtractedClaim,
   ResponseMode,
 } from '../types/openid4vp';
@@ -37,6 +41,8 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
 
   const [certificateMode, setCertificateModeState] = useState<CertificateMode>(loadCertificateMode);
   const [responseMode, setResponseModeState] = useState<ResponseMode>(loadResponseMode);
+  const [credentialFormat, setCredentialFormatState] =
+    useState<CredentialFormatSetting>(loadCredentialFormat);
   const [request, setRequest] = useState<AuthorizationRequest | null>(null);
   const [claims, setClaims] = useState<ExtractedClaim[]>([]);
   const [certResult, setCertResult] = useState<CertificateValidationResult | null>(null);
@@ -108,15 +114,17 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
 
     try {
       const mode = resolveResponseMode(responseMode, request.response_mode);
+      const vpFormat = resolveCredentialFormat(credentialFormat, request);
       const selectedClaims: Record<string, string> = {};
       for (const c of claims) {
         if (claimValues[c.key]) selectedClaims[c.key] = claimValues[c.key];
       }
 
-      const built = await buildResponse(request, selectedClaims, mode);
+      const built = await buildResponse(request, selectedClaims, mode, vpFormat);
       log('info', 'build', 'Antwort gebaut', {
         mode: built.mode,
         contentType: built.contentType,
+        credentialFormat: vpFormat,
       });
 
       const result = await sendResponse(request.response_uri, built, log);
@@ -157,6 +165,11 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     saveResponseMode(mode);
   };
 
+  const setCredentialFormat = (format: CredentialFormatSetting) => {
+    setCredentialFormatState(format);
+    saveCredentialFormat(format);
+  };
+
   const resetFlow = () => {
     setRequest(null);
     setClaims([]);
@@ -178,6 +191,7 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
   return {
     certificateMode,
     responseMode,
+    credentialFormat,
     request,
     claims,
     certResult,
@@ -193,6 +207,7 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     handleApprove,
     setCertificateMode,
     setResponseMode,
+    setCredentialFormat,
     setClaimValues,
     resetFlow,
   };

@@ -1,9 +1,10 @@
-import type { CertificateMode, ResponseMode } from '../types/openid4vp';
+import type { CertificateMode, CredentialFormatSetting, ResponseMode } from '../types/openid4vp';
 
-const CERT_KEY = 'pew_certificate_mode';
-const RESPONSE_KEY = 'pew_response_mode';
-const VIEW_KEY = 'pew_view_mode';
-const COLOR_SCHEME_KEY = 'pew_color_scheme';
+const CERT_KEY = 'edw_certificate_mode';
+const RESPONSE_KEY = 'edw_response_mode';
+const CREDENTIAL_FORMAT_KEY = 'edw_credential_format';
+const VIEW_KEY = 'edw_view_mode';
+const COLOR_SCHEME_KEY = 'edw_color_scheme';
 
 export type ViewMode = 'simple' | 'debug';
 export type ColorScheme = 'light' | 'dark';
@@ -20,6 +21,12 @@ export const RESPONSE_MODE_OPTIONS = [
   { label: 'direct_post', value: 'direct_post' as ResponseMode },
   { label: 'direct_post.jwt', value: 'direct_post_jwt' as ResponseMode },
   { label: 'Raw JSON', value: 'raw_json' as ResponseMode },
+];
+
+export const CREDENTIAL_FORMAT_OPTIONS = [
+  { label: 'Auto', value: 'auto' as CredentialFormatSetting },
+  { label: 'SD-JWT (dc+sd-jwt)', value: 'dc_sd_jwt' as CredentialFormatSetting },
+  { label: 'mdoc (mso_mdoc)', value: 'mso_mdoc' as CredentialFormatSetting },
 ];
 
 export function loadCertificateMode(): CertificateMode {
@@ -40,6 +47,16 @@ export function loadResponseMode(): ResponseMode {
 
 export function saveResponseMode(mode: ResponseMode): void {
   localStorage.setItem(RESPONSE_KEY, mode);
+}
+
+export function loadCredentialFormat(): CredentialFormatSetting {
+  const v = localStorage.getItem(CREDENTIAL_FORMAT_KEY);
+  if (v === 'dc_sd_jwt' || v === 'mso_mdoc') return v;
+  return 'auto';
+}
+
+export function saveCredentialFormat(format: CredentialFormatSetting): void {
+  localStorage.setItem(CREDENTIAL_FORMAT_KEY, format);
 }
 
 export function loadViewMode(): ViewMode {

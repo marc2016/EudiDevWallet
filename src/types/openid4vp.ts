@@ -18,6 +18,8 @@ export interface ActivityLogEntry {
 
 export type CertificateMode = 'off' | 'display' | 'soft' | 'strict';
 export type ResponseMode = 'auto' | 'direct_post' | 'direct_post_jwt' | 'raw_json';
+export type CredentialFormatSetting = 'auto' | 'dc_sd_jwt' | 'mso_mdoc';
+export type VpCredentialFormat = 'dc+sd-jwt' | 'mso_mdoc';
 
 export interface PresentationDefinition {
   id?: string;
@@ -28,6 +30,7 @@ export interface InputDescriptor {
   id: string;
   name?: string;
   purpose?: string;
+  format?: Record<string, unknown>;
   constraints?: {
     fields?: Array<{
       path?: string[];
@@ -40,7 +43,7 @@ export interface DcqlQuery {
   credentials?: Array<{
     id?: string;
     format?: string;
-    meta?: { vct_values?: string[] };
+    meta?: { vct_values?: string[]; doctype_value?: string[] };
     claims?: Array<{ path?: string[]; id?: string }>;
   }>;
 }

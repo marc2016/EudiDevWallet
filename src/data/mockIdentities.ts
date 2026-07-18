@@ -10,7 +10,6 @@ export const mockIdentities: MockIdentity[] = [
       birth_date: '1990-01-15',
       address: 'Musterstraße 1, 10115 Berlin',
       nationalities: 'DE',
-      'eu.europa.ec.eudi.pid.1': 'Personalausweis',
     },
   },
   {
@@ -23,7 +22,6 @@ export const mockIdentities: MockIdentity[] = [
       email: 'anna@example.com',
       address: 'Beispielweg 12, 80331 München',
       nationalities: 'DE',
-      'eu.europa.ec.eudi.pid.1': 'Personalausweis',
     },
   },
 ];

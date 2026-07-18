@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Minimal mock verifier for local PocketEudiWallet testing.
+ * Minimal mock verifier for local EudiDevWallet testing.
  * Usage: node scripts/mock-verifier.mjs
  */
 import { createServer } from 'node:http';
@@ -66,7 +66,7 @@ const server = createServer(async (req, res) => {
     const requestUri = `http://localhost:${PORT}/request`;
     const link = `openid4vp://?client_id=mock-verifier&request_uri=${encodeURIComponent(requestUri)}`;
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(`<h1>Mock Verifier</h1><p>Paste into PocketEudiWallet:</p><textarea rows="4" cols="80">${link}</textarea>`);
+    res.end(`<h1>Mock Verifier</h1><p>Paste into EudiDevWallet:</p><textarea rows="4" cols="80">${link}</textarea>`);
     return;
   }
 

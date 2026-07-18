@@ -180,6 +180,24 @@ export function SimpleView({ flow }: SimpleViewProps) {
                 <SuccessIcon />
                 <span>Erfolgreich freigegeben</span>
               </div>
+              {flow.claims.length > 0 ? (
+                <table className="simple-review-table mt-3">
+                  <thead>
+                    <tr>
+                      <th>Feld</th>
+                      <th>Freigegeben</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {flow.claims.map((c) => (
+                      <tr key={c.key}>
+                        <td>{c.label}</td>
+                        <td>{flow.claimValues[c.key] || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : null}
               <div className="simple-result-actions">
                 <Button label="Neue Anfrage" onClick={handleReset} />
               </div>
@@ -215,8 +233,8 @@ export function SimpleView({ flow }: SimpleViewProps) {
     <div className="simple-view">
       <div className="simple-view-stage">
         <div className="simple-brand">
-          <img src="/logo.png" alt="PocketEudiWallet" className="simple-logo" />
-          <h1 className="simple-title">PocketEudiWallet</h1>
+          <img src="/logo.png" alt="EudiDevWallet" className="simple-logo" />
+          <h1 className="simple-title">EudiDevWallet</h1>
         </div>
 
         <div className="simple-view-content">

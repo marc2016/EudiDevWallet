@@ -6,6 +6,27 @@ export function formatVerifierError(
   const raw = extractErrorMessage(responseBody);
   const isEudiplo = responseUri?.includes('eudiplo.eudi-wallet.org') ?? false;
 
+  if (raw.includes('Invalid mdoc encoding')) {
+    return (
+      `HTTP ${status ?? 400}: Verifier erwartet mdoc (mso_mdoc), Wallet hat SD-JWT gesendet. ` +
+      'Credential-Format auf „mdoc (mso_mdoc)“ stellen oder Auto verwenden.'
+    );
+  }
+
+  if (raw.includes('docType') && raw.includes('issuerSigned') && raw.includes('MissingFieldException')) {
+    return (
+      `HTTP ${status ?? 400}: mdoc-Struktur vom Verifier abgelehnt. ` +
+      'Mock-Document wurde angepasst — bitte erneut freigeben.'
+    );
+  }
+
+  if (raw.includes('Missing x5c') && raw.includes('Mdocs credential')) {
+    return (
+      `HTTP ${status ?? 400}: mdoc ohne X.509-Zertifikatskette (x5chain) im issuerAuth. ` +
+      'Mock-Document wurde angepasst — bitte erneut freigeben.'
+    );
+  }
+
   if (raw.includes('Invalid JWT Signature') || raw.includes('Invalid JWT as input')) {
     if (isEudiplo) {
       return (

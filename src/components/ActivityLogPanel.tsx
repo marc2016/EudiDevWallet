@@ -78,7 +78,7 @@ export function ActivityLogPanel() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `pocketeudiwallet-log-${Date.now()}.json`;
+    a.download = `eudidevwallet-log-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };

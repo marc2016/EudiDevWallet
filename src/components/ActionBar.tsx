@@ -16,6 +16,9 @@ export function ActionBar({
 }: ActionBarProps) {
   return (
     <div className="action-bar surface-section border-top-1 surface-border p-3 mt-2">
+      {lastResult?.ok ? (
+        <Message severity="success" text={lastResult.message} className="mb-2 w-full" />
+      ) : null}
       {lastResult && !lastResult.ok && (
         <Message severity="error" text={lastResult.message} className="mb-2 w-full" />
       )}
