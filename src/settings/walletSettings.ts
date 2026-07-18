@@ -24,7 +24,7 @@ export const CERTIFICATE_MODE_OPTIONS = [
   { label: 'Aus', value: 'off' as CertificateMode },
   { label: 'Anzeigen', value: 'display' as CertificateMode },
   { label: 'Weiche Prüfung', value: 'soft' as CertificateMode },
-  { label: 'Strikte Prüfung', value: 'strict' as CertificateMode, disabled: true },
+  { label: 'Strikte Prüfung', value: 'strict' as CertificateMode },
 ];
 
 export const RESPONSE_MODE_OPTIONS = [
