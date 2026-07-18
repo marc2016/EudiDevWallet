@@ -32,24 +32,6 @@ export function IdentityPicker({
 }: IdentityPickerProps) {
   return (
     <Card title="3. Daten & Identität" className="mb-2">
-      {claims.length > 0 && (
-        <DataTable value={claims} size="small" className="mb-3">
-          <Column
-            header="Freigabe"
-            style={{ width: '4rem' }}
-            body={(c: ExtractedClaim) => (
-              <Checkbox
-                checked={selectedClaims[c.key] !== false}
-                onChange={() => onToggleClaimSelection(c.key)}
-              />
-            )}
-          />
-          <Column field="label" header="Feld" />
-          <Column field="key" header="Claim" />
-          <Column field="path" header="Pfad" body={(r) => <span className="font-mono text-xs">{r.path}</span>} />
-        </DataTable>
-      )}
-
       <div className="flex flex-column gap-3">
         <div className="flex align-items-center gap-2">
           <label className="text-sm font-medium" style={{ minWidth: '7.5rem' }}>
@@ -69,26 +51,36 @@ export function IdentityPicker({
           </div>
         )}
 
-        {claims.map((c) => (
-          <div key={c.key} className="flex align-items-center gap-2" style={{ opacity: selectedClaims[c.key] === false ? 0.6 : 1 }}>
-            <div className="flex align-items-center justify-content-center" style={{ width: '1.5rem' }}>
-              <Checkbox
-                checked={selectedClaims[c.key] !== false}
-                onChange={() => onToggleClaimSelection(c.key)}
-              />
-            </div>
-            <label className="text-sm font-medium" style={{ minWidth: '6rem' }}>
-              {c.label}
-            </label>
-            <InputText
-              value={claimValues[c.key] ?? ''}
-              onChange={(e) => onClaimChange(c.key, e.target.value)}
-              className="flex-1"
-              size="small"
-              disabled={selectedClaims[c.key] === false}
+        {claims.length > 0 && (
+          <DataTable value={claims} size="small" className="mt-2">
+            <Column
+              header="Freigabe"
+              style={{ width: '4rem' }}
+              body={(c: ExtractedClaim) => (
+                <Checkbox
+                  checked={selectedClaims[c.key] !== false}
+                  onChange={() => onToggleClaimSelection(c.key)}
+                />
+              )}
             />
-          </div>
-        ))}
+            <Column field="label" header="Feld" style={{ width: '20%' }} />
+            <Column
+              header="Wert"
+              body={(c: ExtractedClaim) => (
+                <InputText
+                  value={claimValues[c.key] ?? ''}
+                  onChange={(e) => onClaimChange(c.key, e.target.value)}
+                  className="w-full"
+                  size="small"
+                  disabled={selectedClaims[c.key] === false}
+                  style={{ padding: '0.35rem 0.5rem' }}
+                />
+              )}
+            />
+            <Column field="key" header="Claim" style={{ width: '20%' }} />
+            <Column field="path" header="Pfad" body={(r) => <span className="font-mono text-xs">{r.path}</span>} />
+          </DataTable>
+        )}
       </div>
     </Card>
   );
