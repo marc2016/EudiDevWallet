@@ -44,12 +44,21 @@ docker compose --profile prod up --build
 
 ## Bedienung
 
-1. **OpenID4VP-URL** oben links in der Card „Anfrage“ einfügen
+1. **OpenID4VP-URL** oben links in der Card „Anfrage“ einfügen (oder den Paste-Button `📋` nutzen, um die URL direkt aus der Zwischenablage einzufügen)
 2. **Analysieren** klicken
 3. In der Toolbar **Zertifikatsmodus** und **Antwortformat** wählen
-4. Mock-Identität wählen oder Felder anpassen
+4. Mock-Identität wählen oder Claims direkt in der konsolidierten Datentabelle bearbeiten und anpassen
 5. **Freigeben** klicken
-6. Rechts im **Aktivitäts-Protokoll** jeden Schritt nachvollziehen
+6. Rechts im **Aktivitäts-Protokoll** jeden Schritt nachvollziehen (einschließlich dekodierter JWE- und SD-JWT-Details)
+
+## Hauptfeatures & Simulationen
+
+- **Einfaches Einfügen**: Paste-Button direkt neben den URL-Eingabefeldern für schnelle Workflows.
+- **Konsolidierte Claim-Tabelle**: Übersichtliche Tabelle zum direkten Auswählen, Deaktivieren und Editieren von Identitäts-Attributen (inklusive Alias-Unterstützung).
+- **Einmal-Credentials (Unlinkability)**: Simulation von verbrauchbaren PID-Credentials im Batch (5 Stück). Nach jedem Freigabe-Vorgang wird ein Credential verbraucht. Sinkt der Zähler auf 1 oder weniger, wird automatisch ein DPoP-Proof-basierter Refresh getriggert.
+- **Erweitertes Protokoll & JWE/SD-JWT-Dekodierung**: Das Aktivitäts-Protokoll entschlüsselt und visualisiert übertragene Token-Inhalte (wie SD-JWTs und JWEs) für eine einfachere Fehlersuche.
+- **Protokoll-Autoclear**: Optionale Checkbox „Protokoll bei neuer Anfrage löschen“ sorgt für eine übersichtliche History bei mehreren aufeinanderfolgenden Tests.
+- **Responsives & optimiertes Layout**: Verbessertes Flexbox-Layout mit mitscrollendem Logo in der `SimpleView` für optimale mobile Handhabung.
 
 ## Unterstützte Eingaben
 
