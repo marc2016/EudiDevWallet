@@ -136,6 +136,7 @@ body {
 .simple-logo {
   height: 11rem;
   width: auto;
+  border-radius: 20%;
 }
 
 .simple-title {
