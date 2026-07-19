@@ -80,6 +80,7 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     for (const c of extracted) {
       values[c.key] = mockClaimValue(identity.claims, c.key);
     }
+    console.log('[useWalletFlow] applyIdentity setClaimValues:', values);
     setClaimValues(values);
   }, []);
 
@@ -133,6 +134,11 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
 
   const handleIdentityChange = (id: string) => {
     setSelectedIdentityId(id);
+    const identity = mockIdentities.find((m) => m.id === id) ?? mockIdentities[0];
+    log('info', 'claims', `Identität zu "${identity.label}" gewechselt. Werte werden aktualisiert.`, {
+      identityId: id,
+      claimsCount: claims.length
+    });
     applyIdentity(id, claims);
   };
 

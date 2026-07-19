@@ -52,7 +52,7 @@ export function IdentityPicker({
         )}
 
         {claims.length > 0 && (
-          <DataTable value={claims} size="small" className="mt-2">
+          <DataTable key={selectedIdentityId} value={claims} size="small" className="mt-2">
             <Column
               header="Freigabe"
               style={{ width: '4rem' }}
