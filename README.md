@@ -147,7 +147,7 @@ npm run mock-verifier
 | Problem | Lösung |
 |---------|--------|
 | CORS-Fehler | Origin `http://localhost:5173` in der Hauptanwendung freigeben |
-| Freigeben disabled | `response_uri` fehlt oder Zertifikatsprüfung fehlgeschlagen |
+| Freigaben disabled | `response_uri` fehlt oder Zertifikatsprüfung fehlgeschlagen |
 | `request_uri` schlägt fehl | Session abgelaufen, CORS beim GET, Netzwerk prüfen |
 
 ## Projektstruktur
@@ -165,4 +165,5 @@ src/
 
 ## Lizenz
 
-MIT — nur für Entwicklung und Tests verwenden. Keine echten Personaldaten einsetzen.
+MIT — nur für Entwicklung und Tests verwenden. Keine echten Personaldaten einsetzen.llowing your project to keep going. You can also make an explicit request for maintainers.
+>>>>>>> opensource/main
