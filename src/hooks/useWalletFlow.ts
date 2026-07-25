@@ -24,7 +24,7 @@ import {
   saveSimulateOneTimeUse,
   saveTrustAnchorMode,
 } from '../settings/walletSettings';
-import { addCustomIdentity, getAllIdentities } from '../data/mockIdentities';
+import { addCustomIdentity, getAllIdentities, removeCustomIdentity, clearCustomIdentities } from '../data/mockIdentities';
 import { isCredentialOfferInput, resolveCredentialOfferAsync } from '../lib/parseCredentialOffer';
 import { sendCredentialNotification, simulateIssueCredential } from '../lib/issueCredential';
 import type { CredentialOffer, IssuedCredentialResult } from '../types/openid4vci';
@@ -440,6 +440,20 @@ export function useWalletFlow() {
     saveSimulateOneTimeUse(val);
   };
 
+  const removeIdentity = (id: string) => {
+    const updated = removeCustomIdentity(id);
+    setIdentities(updated);
+    if (selectedIdentityId === id) {
+      setSelectedIdentityId(updated[0]?.id ?? 'max-mustermann');
+    }
+  };
+
+  const clearAllCustomIdentities = () => {
+    const updated = clearCustomIdentities();
+    setIdentities(updated);
+    setSelectedIdentityId(updated[0]?.id ?? 'max-mustermann');
+  };
+
   const resetFlow = () => {
     setRequest(null);
     setClaims([]);
@@ -505,6 +519,8 @@ export function useWalletFlow() {
     setSimulateOneTimeUse,
     setClaimValues,
     resetFlow,
+    removeIdentity,
+    clearAllCustomIdentities,
   };
 }
 

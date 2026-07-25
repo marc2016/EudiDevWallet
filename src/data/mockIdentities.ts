@@ -148,6 +148,13 @@ export function getAllIdentities(): MockIdentity[] {
   return [...custom, ...mockIdentities];
 }
 
+export function removeCustomIdentity(id: string): MockIdentity[] {
+  const current = loadStoredIdentities();
+  const updated = current.filter((i) => i.id !== id);
+  saveStoredIdentities(updated);
+  return getAllIdentities();
+}
+
 export function clearCustomIdentities(): MockIdentity[] {
   try {
     localStorage.removeItem(STORAGE_KEY);

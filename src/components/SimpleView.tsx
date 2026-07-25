@@ -8,6 +8,7 @@ import { Checkbox } from 'primereact/checkbox';
 import { Tag } from 'primereact/tag';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { SelectiveDisclosureModal } from './SelectiveDisclosureModal';
+import { CredentialWalletTab } from './CredentialWalletTab';
 import type { useWalletFlow } from '../hooks/useWalletFlow';
 
 type WalletFlow = ReturnType<typeof useWalletFlow>;
@@ -51,6 +52,7 @@ export function SimpleView({ flow }: SimpleViewProps) {
   const [leavingStep, setLeavingStep] = useState<SimpleStep | null>(null);
   const [url, setUrl] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'request' | 'wallet'>('request');
   const skipTransitionRef = useRef(true);
 
   const stepRef = useRef(step);
@@ -462,27 +464,67 @@ export function SimpleView({ flow }: SimpleViewProps) {
 
   return (
     <div className="simple-view">
-      <div className="simple-view-stage">
-        <div className="simple-brand">
-          <img src="/logo.png?v=2" alt="EudiDevWallet" className="simple-logo" />
-          <h1 className="simple-title">EudiDevWallet</h1>
-        </div>
+      {/* App brand — always visible above tabs */}
+      <div className="simple-brand">
+        <img src="/logo.png?v=2" alt="EudiDevWallet" className="simple-logo" />
+        <h1 className="simple-title">EudiDevWallet</h1>
+      </div>
 
-        <div className="simple-view-content">
-          {leavingStep && (
-            <div className="simple-step-panel simple-step-panel--leave">
-              <div className="simple-step-inner" onAnimationEnd={handleLeaveAnimationEnd}>
-                {renderStepContent(leavingStep)}
-              </div>
-            </div>
+      {/* Tab bar */}
+      <div className="simple-tab-bar">
+        <button
+          id="tab-request"
+          className={`simple-tab-btn ${activeTab === 'request' ? 'simple-tab-btn--active' : ''}`}
+          onClick={() => setActiveTab('request')}
+          aria-selected={activeTab === 'request'}
+          role="tab"
+        >
+          <i className="pi pi-link" />
+          Anfrage
+        </button>
+        <button
+          id="tab-wallet"
+          className={`simple-tab-btn ${activeTab === 'wallet' ? 'simple-tab-btn--active' : ''}`}
+          onClick={() => setActiveTab('wallet')}
+          aria-selected={activeTab === 'wallet'}
+          role="tab"
+        >
+          <i className="pi pi-wallet" />
+          Mein Wallet
+          {flow.identities.filter((i) => i.category !== 'PID' && i.category !== 'EAA Presets').length > 0 && (
+            <span className="simple-tab-badge">
+              {flow.identities.filter((i) => i.category !== 'PID' && i.category !== 'EAA Presets').length}
+            </span>
           )}
-          <div className={`simple-step-panel ${leavingStep ? 'simple-step-panel--enter' : ''}`}>
-            <div className="simple-step-inner" key={step}>
-              {renderStepContent(step)}
+        </button>
+      </div>
+
+      {activeTab === 'request' ? (
+        <div className="simple-view-stage">
+          <div className="simple-view-content">
+            {leavingStep && (
+              <div className="simple-step-panel simple-step-panel--leave">
+                <div className="simple-step-inner" onAnimationEnd={handleLeaveAnimationEnd}>
+                  {renderStepContent(leavingStep)}
+                </div>
+              </div>
+            )}
+            <div className={`simple-step-panel ${leavingStep ? 'simple-step-panel--enter' : ''}`}>
+              <div className="simple-step-inner" key={step}>
+                {renderStepContent(step)}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="simple-wallet-stage">
+          <CredentialWalletTab
+            identities={flow.identities}
+            onRemove={flow.removeIdentity}
+            onClearAll={flow.clearAllCustomIdentities}
+          />
+        </div>
+      )}
 
       <SelectiveDisclosureModal
         visible={showModal}
