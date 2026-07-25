@@ -272,35 +272,61 @@ export async function requestLiveCredentialFromIssuer(
     ? `${offer.credential_issuer}/credential`
     : `${offer.credential_issuer}/vci/credential`;
 
-  let proofJwt: string | undefined;
-  try {
-    proofJwt = await generateProofJwt(offer.credential_issuer, cNonce);
-  } catch (err) {
-    log?.('warn', 'o4vci', `Konnte Proof JWT für Credential Endpoint nicht erzeugen: ${String(err)}`);
-  }
-
   const tokenToUse = bearerToken || 'simulated-bearer-token';
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${tokenToUse}`,
   };
 
-  const body: Record<string, unknown> = {
-    credential_configuration_id: offer.credential_configuration_ids[0] || 'loyalty-card',
-  };
-
-  if (proofJwt) {
-    body.proof = {
-      proof_type: 'jwt',
-      jwt: proofJwt,
-    };
+  // Helper to fetch a fresh c_nonce from the issuer's dedicated nonce endpoint
+  async function fetchFreshNonce(): Promise<string | undefined> {
+    const nonceEndpoint = offer.credential_issuer.endsWith('/vci')
+      ? `${offer.credential_issuer}/nonce`
+      : `${offer.credential_issuer}/vci/nonce`;
+    try {
+      const nonceRes = await fetch(nonceEndpoint, {
+        method: 'POST',
+        headers: tokenToUse !== 'simulated-bearer-token' ? { Authorization: `Bearer ${tokenToUse}` } : {},
+      });
+      if (nonceRes.ok) {
+        const nonceData = await nonceRes.json() as { c_nonce?: string };
+        if (nonceData.c_nonce) {
+          log?.('info', 'o4vci', `Frischer c_nonce vom Nonce-Endpoint abgerufen`, { c_nonce: nonceData.c_nonce });
+          return nonceData.c_nonce;
+        }
+      }
+    } catch (e) {
+      log?.('warn', 'o4vci', `Fehler beim Abrufen der c_nonce vom Nonce-Endpoint`, { error: String(e) });
+    }
+    return undefined;
   }
 
-  try {
-    log?.('info', 'o4vci', `Live Credential POST (${credentialEndpoint}) mit Holder Proof JWT gestartet`, {
-      credential_configuration_id: body.credential_configuration_id,
-      hasBearerToken: Boolean(bearerToken),
-    });
+  // Helper to perform one credential POST attempt with a given nonce
+  async function attemptCredentialPost(nonce: string | undefined, attempt: number): Promise<{ credential?: unknown; notification_id?: string; access_token?: string } | 'invalid_nonce' | undefined> {
+    let proofJwt: string | undefined;
+    try {
+      proofJwt = await generateProofJwt(offer.credential_issuer, nonce);
+    } catch (err) {
+      log?.('warn', 'o4vci', `Konnte Proof JWT für Credential Endpoint nicht erzeugen: ${String(err)}`);
+    }
+
+    const body: Record<string, unknown> = {
+      credential_configuration_id: offer.credential_configuration_ids[0] || 'loyalty-card',
+    };
+    if (proofJwt) {
+      body.proof = { proof_type: 'jwt', jwt: proofJwt };
+    }
+
+    if (attempt === 1) {
+      log?.('info', 'o4vci', `Live Credential POST (${credentialEndpoint}) mit Holder Proof JWT gestartet`, {
+        credential_configuration_id: body.credential_configuration_id,
+        hasBearerToken: Boolean(bearerToken),
+      });
+    } else {
+      log?.('info', 'o4vci', `Live Credential POST Retry (${credentialEndpoint}) mit erneutem c_nonce`, {
+        attempt,
+      });
+    }
 
     const res = await fetch(credentialEndpoint, {
       method: 'POST',
@@ -316,18 +342,51 @@ export async function requestLiveCredentialFromIssuer(
         notification_id: typeof data.notification_id === 'string' ? data.notification_id : undefined,
         access_token: typeof data.access_token === 'string' ? data.access_token : undefined,
       };
-    } else {
-      let errBody: unknown;
-      try {
-        errBody = await res.json();
-      } catch {
-        errBody = await res.text();
-      }
-      log?.('warn', 'o4vci', `Live Credential Endpoint POST (${credentialEndpoint}) → HTTP ${res.status}`, {
+    }
+
+    let errBody: unknown;
+    try {
+      errBody = await res.json();
+    } catch {
+      errBody = await res.text();
+    }
+
+    // Check for invalid_nonce — retry with a fresh nonce from the nonce endpoint
+    const errObj = typeof errBody === 'object' && errBody !== null ? (errBody as Record<string, unknown>) : {};
+    if (res.status === 400 && errObj['error'] === 'invalid_nonce') {
+      log?.('warn', 'o4vci', `Live Credential Endpoint POST (${credentialEndpoint}) → HTTP ${res.status} (invalid_nonce)`, {
         status: res.status,
         response: errBody,
       });
+      return 'invalid_nonce';
     }
+
+    log?.('warn', 'o4vci', `Live Credential Endpoint POST (${credentialEndpoint}) → HTTP ${res.status}`, {
+      status: res.status,
+      response: errBody,
+    });
+    return undefined;
+  }
+
+  try {
+    // If no c_nonce was supplied, proactively fetch one from the dedicated nonce endpoint
+    let activeNonce = cNonce;
+    if (!activeNonce) {
+      activeNonce = await fetchFreshNonce();
+    }
+
+    const firstResult = await attemptCredentialPost(activeNonce, 1);
+
+    if (firstResult === 'invalid_nonce') {
+      // Retry once with a fresh nonce from the dedicated nonce endpoint
+      log?.('info', 'o4vci', `Hole frischen c_nonce vom Nonce-Endpoint für Credential Retry …`);
+      const freshNonce = await fetchFreshNonce();
+      const retryResult = await attemptCredentialPost(freshNonce, 2);
+      if (retryResult !== 'invalid_nonce') return retryResult;
+      return undefined;
+    }
+
+    return firstResult;
   } catch (err) {
     log?.('info', 'o4vci', `Live Credential Request (${credentialEndpoint}) nicht möglich: ${String(err)}`);
   }
@@ -344,11 +403,16 @@ export async function simulateIssueCredential(
   // Simulate network latency
   await new Promise((res) => setTimeout(res, 600));
 
+  const isRealIssuer = offer.credential_issuer.startsWith('http');
   let accessToken: string | undefined;
-  let notificationId = `notif-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  // For simulated issuers we generate a local notification id; for real issuers
+  // we only use the notification_id returned by the server (undefined = don't notify).
+  let notificationId: string | undefined = isRealIssuer
+    ? undefined
+    : `notif-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   let liveCredentialData: unknown = undefined;
 
-  if (offer.credential_issuer.startsWith('http')) {
+  if (isRealIssuer) {
     const tokenData = await fetchOpenID4VCIAccessToken(offer, pin, log);
     if (tokenData) {
       accessToken = tokenData.access_token;
@@ -438,11 +502,13 @@ export async function simulateIssueCredential(
     credentialId: `urn:uuid:${id}`,
     issuer: offer.credential_issuer,
     accessToken,
-    notification: {
-      notification_id: notificationId,
-      event: 'credential_accepted',
-      event_description: 'Credential successfully stored in EudiDevWallet',
-    },
+    notification: notificationId
+      ? {
+          notification_id: notificationId,
+          event: 'credential_accepted',
+          event_description: 'Credential successfully stored in EudiDevWallet',
+        }
+      : undefined,
   };
 }
 
