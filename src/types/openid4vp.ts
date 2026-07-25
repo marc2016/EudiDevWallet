@@ -35,6 +35,9 @@ export interface InputDescriptor {
     fields?: Array<{
       path?: string[];
       filter?: { type?: string };
+      optional?: boolean;
+      essential?: boolean;
+      intent_to_retain?: boolean;
     }>;
   };
 }
@@ -44,7 +47,7 @@ export interface DcqlQuery {
     id?: string;
     format?: string;
     meta?: { vct_values?: string[]; doctype_value?: string[] };
-    claims?: Array<{ path?: string[]; id?: string }>;
+    claims?: Array<{ path?: string[]; id?: string; optional?: boolean; essential?: boolean }>;
   }>;
 }
 
@@ -71,6 +74,7 @@ export interface ExtractedClaim {
   key: string;
   path: string;
   label: string;
+  essential?: boolean;
 }
 
 export interface CertificateInfo {

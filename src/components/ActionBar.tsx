@@ -3,6 +3,7 @@ import { Message } from 'primereact/message';
 
 interface ActionBarProps {
   onApprove: () => void;
+  onPreview?: () => void;
   loading: boolean;
   disabled: boolean;
   lastResult?: { ok: boolean; message: string };
@@ -10,6 +11,7 @@ interface ActionBarProps {
 
 export function ActionBar({
   onApprove,
+  onPreview,
   loading,
   disabled,
   lastResult,
@@ -22,15 +24,27 @@ export function ActionBar({
       {lastResult && !lastResult.ok && (
         <Message severity="error" text={lastResult.message} className="mb-2 w-full" />
       )}
-      <Button
-        label="Freigeben"
-        icon="pi pi-check"
-        severity="success"
-        onClick={onApprove}
-        loading={loading}
-        disabled={disabled}
-        className="w-full"
-      />
+      <div className="flex gap-2">
+        {onPreview && (
+          <Button
+            label="Freigabe-Vorschau"
+            icon="pi pi-eye"
+            severity="info"
+            onClick={onPreview}
+            disabled={disabled || loading}
+            className="flex-1"
+          />
+        )}
+        <Button
+          label="Freigeben"
+          icon="pi pi-check"
+          severity="success"
+          onClick={onApprove}
+          loading={loading}
+          disabled={disabled}
+          className="flex-1"
+        />
+      </div>
     </div>
   );
 }

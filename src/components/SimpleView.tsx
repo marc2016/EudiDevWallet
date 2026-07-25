@@ -5,8 +5,10 @@ import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { Checkbox } from 'primereact/checkbox';
+import { Tag } from 'primereact/tag';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { mockIdentities } from '../data/mockIdentities';
+import { SelectiveDisclosureModal } from './SelectiveDisclosureModal';
 import type { useWalletFlow } from '../hooks/useWalletFlow';
 
 type WalletFlow = ReturnType<typeof useWalletFlow>;
@@ -38,6 +40,7 @@ export function SimpleView({ flow }: SimpleViewProps) {
   const [step, setStep] = useState<SimpleStep>(() => initialStep(flow));
   const [leavingStep, setLeavingStep] = useState<SimpleStep | null>(null);
   const [url, setUrl] = useState('');
+  const [showModal, setShowModal] = useState(false);
   const skipTransitionRef = useRef(true);
 
   const stepRef = useRef(step);
@@ -75,6 +78,7 @@ export function SimpleView({ flow }: SimpleViewProps) {
   };
 
   const handleApprove = async () => {
+    setShowModal(false);
     changeStep('submitting');
     const ok = await flow.handleApprove();
     changeStep(ok ? 'result' : 'error');
@@ -154,16 +158,44 @@ export function SimpleView({ flow }: SimpleViewProps) {
           </div>
         );
 
-      case 'review':
+      case 'review': {
+        const totalDisclosed = flow.claims.filter((c) => flow.selectedClaims[c.key] !== false).length;
+        const totalOmitted = flow.claims.length - totalDisclosed;
+
         return (
           <>
-            <h2 className="simple-heading">Angefragt</h2>
+            <div className="flex align-items-center justify-content-between mb-2">
+              <h2 className="simple-heading mb-0">Angefragte Daten</h2>
+              <div className="flex gap-1">
+                <Button
+                  label="Optional abwählen"
+                  icon="pi pi-filter-slash"
+                  size="small"
+                  severity="secondary"
+                  outlined
+                  type="button"
+                  className="text-xs py-1 px-2"
+                  onClick={flow.deselectOptionalClaims}
+                />
+                <Button
+                  label="Alle"
+                  icon="pi pi-check-square"
+                  size="small"
+                  severity="secondary"
+                  outlined
+                  type="button"
+                  className="text-xs py-1 px-2"
+                  onClick={flow.selectAllClaims}
+                />
+              </div>
+            </div>
+
             <table className="simple-review-table">
               <thead>
                 <tr>
-                  <th style={{ width: '3rem' }}>Freigabe</th>
+                  <th style={{ width: '2.5rem' }}>Freigabe</th>
                   <th>Anfrage</th>
-                  <th>Antwort</th>
+                  <th>Wert</th>
                 </tr>
               </thead>
               <tbody>
@@ -175,11 +207,25 @@ export function SimpleView({ flow }: SimpleViewProps) {
                         onChange={() => flow.toggleClaimSelection(c.key)}
                       />
                     </td>
-                    <td style={{ textDecoration: flow.selectedClaims[c.key] === false ? 'line-through' : 'none' }}>
-                      {c.label}
+                    <td>
+                      <div className="flex align-items-center gap-2">
+                        <span style={{ textDecoration: flow.selectedClaims[c.key] === false ? 'line-through' : 'none' }}>
+                          {c.label}
+                        </span>
+                        <Tag
+                          value={c.essential ? 'Pflicht' : 'Optional'}
+                          severity={c.essential ? 'danger' : 'info'}
+                          className="text-xs"
+                          style={{ fontSize: '0.65rem', padding: '0.1rem 0.35rem' }}
+                        />
+                      </div>
                     </td>
                     <td style={{ color: flow.selectedClaims[c.key] === false ? 'var(--text-color-secondary)' : 'inherit' }}>
-                      {flow.claimValues[c.key] || '—'}
+                      {flow.selectedClaims[c.key] === false ? (
+                        <span className="text-xs text-orange-500 font-semibold">Unterdrückt</span>
+                      ) : (
+                        flow.claimValues[c.key] || '—'
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -187,6 +233,11 @@ export function SimpleView({ flow }: SimpleViewProps) {
             </table>
 
             <div className="simple-review-actions">
+              {totalOmitted > 0 && (
+                <div className="p-2 border-round text-xs font-semibold text-center surface-200 text-primary">
+                  🛡️ Selective Disclosure: {totalOmitted} von {flow.claims.length} Attributen unterdrückt
+                </div>
+              )}
               <Dropdown
                 value={flow.selectedIdentityId}
                 options={groupedIdentities}
@@ -205,17 +256,29 @@ export function SimpleView({ flow }: SimpleViewProps) {
               {flow.disabledReason && (
                 <p className="simple-hint text-color-secondary">{flow.disabledReason}</p>
               )}
-              <Button
-                label="Freigeben"
-                icon="pi pi-check"
-                severity="success"
-                className="w-full"
-                onClick={() => void handleApprove()}
-                disabled={Boolean(flow.disabledReason)}
-              />
+              <div className="flex gap-2">
+                <Button
+                  label="Vorschau"
+                  icon="pi pi-eye"
+                  severity="info"
+                  outlined
+                  className="flex-1"
+                  onClick={() => setShowModal(true)}
+                  disabled={Boolean(flow.disabledReason)}
+                />
+                <Button
+                  label="Freigeben"
+                  icon="pi pi-check"
+                  severity="success"
+                  className="flex-1"
+                  onClick={() => void handleApprove()}
+                  disabled={Boolean(flow.disabledReason)}
+                />
+              </div>
             </div>
           </>
         );
+      }
 
       case 'result':
         if (!flow.lastResult) return null;
@@ -300,6 +363,21 @@ export function SimpleView({ flow }: SimpleViewProps) {
           </div>
         </div>
       </div>
+
+      <SelectiveDisclosureModal
+        visible={showModal}
+        onHide={() => setShowModal(false)}
+        onApprove={() => void handleApprove()}
+        submitting={flow.submitting}
+        request={flow.request}
+        certResult={flow.certResult}
+        claims={flow.claims}
+        selectedClaims={flow.selectedClaims}
+        claimValues={flow.claimValues}
+        onToggleClaimSelection={flow.toggleClaimSelection}
+        onSelectAllClaims={flow.selectAllClaims}
+        onDeselectOptionalClaims={flow.deselectOptionalClaims}
+      />
     </div>
   );
 }

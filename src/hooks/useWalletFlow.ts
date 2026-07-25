@@ -156,6 +156,22 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     }));
   }, []);
 
+  const selectAllClaims = useCallback(() => {
+    const next: Record<string, boolean> = {};
+    for (const c of claims) {
+      next[c.key] = true;
+    }
+    setSelectedClaims(next);
+  }, [claims]);
+
+  const deselectOptionalClaims = useCallback(() => {
+    const next: Record<string, boolean> = {};
+    for (const c of claims) {
+      next[c.key] = c.essential ?? false;
+    }
+    setSelectedClaims(next);
+  }, [claims]);
+
   const handleApprove = async (): Promise<boolean> => {
     if (!request?.response_uri) return false;
     setSubmitting(true);
@@ -375,6 +391,8 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     handleAnalyze,
     handleIdentityChange,
     toggleClaimSelection,
+    selectAllClaims,
+    deselectOptionalClaims,
     handleApprove,
     setCertificateMode,
     setTrustAnchorMode,

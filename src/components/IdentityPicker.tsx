@@ -4,6 +4,8 @@ import { Column } from 'primereact/column';
 import { Dropdown } from 'primereact/dropdown';
 import { InputText } from 'primereact/inputtext';
 import { Checkbox } from 'primereact/checkbox';
+import { Tag } from 'primereact/tag';
+import { Button } from 'primereact/button';
 import type { ExtractedClaim } from '../types/openid4vp';
 import { mockIdentities } from '../data/mockIdentities';
 
@@ -17,6 +19,8 @@ interface IdentityPickerProps {
   onIdentityChange: (id: string) => void;
   onClaimChange: (key: string, value: string) => void;
   onToggleClaimSelection: (key: string) => void;
+  onSelectAllClaims?: () => void;
+  onDeselectOptionalClaims?: () => void;
 }
 
 export function IdentityPicker({
@@ -29,6 +33,8 @@ export function IdentityPicker({
   onIdentityChange,
   onClaimChange,
   onToggleClaimSelection,
+  onSelectAllClaims,
+  onDeselectOptionalClaims,
 }: IdentityPickerProps) {
   const groupedIdentities = [
     {
@@ -77,34 +83,77 @@ export function IdentityPicker({
         )}
 
         {claims.length > 0 && (
-          <DataTable key={selectedIdentityId} value={claims} size="small" className="mt-2">
-            <Column
-              header="Freigabe"
-              style={{ width: '4rem' }}
-              body={(c: ExtractedClaim) => (
-                <Checkbox
-                  checked={selectedClaims[c.key] !== false}
-                  onChange={() => onToggleClaimSelection(c.key)}
-                />
-              )}
-            />
-            <Column field="label" header="Feld" style={{ width: '20%' }} />
-            <Column
-              header="Wert"
-              body={(c: ExtractedClaim) => (
-                <InputText
-                  value={claimValues[c.key] ?? ''}
-                  onChange={(e) => onClaimChange(c.key, e.target.value)}
-                  className="w-full"
-                  size="small"
-                  disabled={selectedClaims[c.key] === false}
-                  style={{ padding: '0.35rem 0.5rem' }}
-                />
-              )}
-            />
-            <Column field="key" header="Claim" style={{ width: '20%' }} />
-            <Column field="path" header="Pfad" body={(r) => <span className="font-mono text-xs">{r.path}</span>} />
-          </DataTable>
+          <>
+            <div className="flex align-items-center justify-content-between mt-2">
+              <span className="text-xs font-semibold text-color-secondary">Selective Disclosure Steuerung:</span>
+              <div className="flex gap-2">
+                {onDeselectOptionalClaims && (
+                  <Button
+                    label="Alle optionalen abwählen"
+                    icon="pi pi-filter-slash"
+                    size="small"
+                    severity="secondary"
+                    outlined
+                    type="button"
+                    className="text-xs py-1 px-2"
+                    onClick={onDeselectOptionalClaims}
+                  />
+                )}
+                {onSelectAllClaims && (
+                  <Button
+                    label="Alle auswählen"
+                    icon="pi pi-check-square"
+                    size="small"
+                    severity="secondary"
+                    outlined
+                    type="button"
+                    className="text-xs py-1 px-2"
+                    onClick={onSelectAllClaims}
+                  />
+                )}
+              </div>
+            </div>
+
+            <DataTable key={selectedIdentityId} value={claims} size="small" className="mt-1">
+              <Column
+                header="Freigabe"
+                style={{ width: '4rem' }}
+                body={(c: ExtractedClaim) => (
+                  <Checkbox
+                    checked={selectedClaims[c.key] !== false}
+                    onChange={() => onToggleClaimSelection(c.key)}
+                  />
+                )}
+              />
+              <Column field="label" header="Feld" style={{ width: '20%' }} />
+              <Column
+                header="Typ"
+                style={{ width: '7rem' }}
+                body={(c: ExtractedClaim) => (
+                  <Tag
+                    value={c.essential ? 'Pflicht' : 'Optional'}
+                    severity={c.essential ? 'danger' : 'info'}
+                    className="text-xs"
+                  />
+                )}
+              />
+              <Column
+                header="Wert"
+                body={(c: ExtractedClaim) => (
+                  <InputText
+                    value={claimValues[c.key] ?? ''}
+                    onChange={(e) => onClaimChange(c.key, e.target.value)}
+                    className="w-full"
+                    size="small"
+                    disabled={selectedClaims[c.key] === false}
+                    style={{ padding: '0.35rem 0.5rem' }}
+                  />
+                )}
+              />
+              <Column field="key" header="Claim" style={{ width: '18%' }} />
+              <Column field="path" header="Pfad" body={(r) => <span className="font-mono text-xs">{r.path}</span>} />
+            </DataTable>
+          </>
         )}
       </div>
     </Card>
