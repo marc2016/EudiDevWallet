@@ -115,3 +115,45 @@ export const mockIdentities: MockIdentity[] = [
 
 export const defaultIdentity = mockIdentities[0];
 
+const STORAGE_KEY = 'eudi_wallet_issued_credentials';
+
+export function loadStoredIdentities(): MockIdentity[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveStoredIdentities(identities: MockIdentity[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(identities));
+  } catch (err) {
+    console.error('Failed to save issued credentials to localStorage:', err);
+  }
+}
+
+export function addCustomIdentity(identity: MockIdentity): MockIdentity[] {
+  const current = loadStoredIdentities();
+  const updated = [identity, ...current];
+  saveStoredIdentities(updated);
+  return getAllIdentities();
+}
+
+export function getAllIdentities(): MockIdentity[] {
+  const custom = loadStoredIdentities();
+  return [...custom, ...mockIdentities];
+}
+
+export function clearCustomIdentities(): MockIdentity[] {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+  return [...mockIdentities];
+}
+

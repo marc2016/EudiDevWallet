@@ -25,7 +25,7 @@ export function AppToolbar({
   onColorSchemeChange,
 }: AppToolbarProps) {
   return (
-    <div className="app-toolbar">
+    <div className="app-toolbar flex items-center gap-2">
       <SelectButton
         value={viewMode}
         options={VIEW_OPTIONS}

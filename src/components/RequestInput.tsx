@@ -16,7 +16,7 @@ export function RequestInput({ onAnalyze, loading, settings }: RequestInputProps
   return (
     <Card title="1. Anfrage" className="mb-2">
       <p className="text-sm text-color-secondary mt-0 mb-2">
-        OpenID4VP-Anfrage-URL oder Query-String einfügen
+        OpenID4VP-Anfrage oder OpenID4VCI Credential Offer URI / Query-String einfügen
       </p>
       <InputTextarea
         value={value}
@@ -24,7 +24,7 @@ export function RequestInput({ onAnalyze, loading, settings }: RequestInputProps
         rows={4}
         autoResize
         className="w-full font-mono text-sm"
-        placeholder="openid4vp://?client_id=…&response_uri=…"
+        placeholder="openid4vp://?client_id=… oder openid-credential-offer://…"
       />
       <div className="mt-2 flex gap-2">
         <Button

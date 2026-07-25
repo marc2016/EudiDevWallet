@@ -6,14 +6,15 @@ import { InputText } from 'primereact/inputtext';
 import { Checkbox } from 'primereact/checkbox';
 import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
-import type { ExtractedClaim } from '../types/openid4vp';
-import { mockIdentities } from '../data/mockIdentities';
+import type { ExtractedClaim, MockIdentity } from '../types/openid4vp';
+import { mockIdentities as defaultMockIdentities } from '../data/mockIdentities';
 
 interface IdentityPickerProps {
   claims: ExtractedClaim[];
   selectedIdentityId: string;
   claimValues: Record<string, string>;
   selectedClaims: Record<string, boolean>;
+  identities?: MockIdentity[];
   simulateOneTimeUse?: boolean;
   remainingCredentials?: number;
   onIdentityChange: (id: string) => void;
@@ -28,6 +29,7 @@ export function IdentityPicker({
   selectedIdentityId,
   claimValues,
   selectedClaims,
+  identities = defaultMockIdentities,
   simulateOneTimeUse,
   remainingCredentials,
   onIdentityChange,
@@ -36,18 +38,40 @@ export function IdentityPicker({
   onSelectAllClaims,
   onDeselectOptionalClaims,
 }: IdentityPickerProps) {
+  const customIdentities = identities.filter(
+    (m) => m.category !== 'PID' && m.category !== 'EAA Presets'
+  );
+  const pidIdentities = identities.filter((m) => !m.category || m.category === 'PID');
+  const eaaIdentities = identities.filter((m) => m.category === 'EAA Presets');
+
   const groupedIdentities = [
+    ...(customIdentities.length > 0
+      ? [
+          {
+            label: '📥 Ausgestellte Credentials (OpenID4VCI)',
+            items: customIdentities.map((m) => ({
+              label: m.label,
+              value: m.id,
+              description: m.description,
+            })),
+          },
+        ]
+      : []),
     {
       label: '🆔 Personalausweis (PID)',
-      items: mockIdentities
-        .filter((m) => !m.category || m.category === 'PID')
-        .map((m) => ({ label: m.label, value: m.id, description: m.description })),
+      items: pidIdentities.map((m) => ({
+        label: m.label,
+        value: m.id,
+        description: m.description,
+      })),
     },
     {
       label: '💳 EAA Credential Presets (Branchen-Szenarien)',
-      items: mockIdentities
-        .filter((m) => m.category === 'EAA Presets')
-        .map((m) => ({ label: m.label, value: m.id, description: m.description })),
+      items: eaaIdentities.map((m) => ({
+        label: m.label,
+        value: m.id,
+        description: m.description,
+      })),
     },
   ];
 

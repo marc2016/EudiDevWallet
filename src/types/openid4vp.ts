@@ -5,7 +5,8 @@ export type LogCategory =
   | 'claims'
   | 'cert'
   | 'build'
-  | 'http';
+  | 'http'
+  | 'o4vci';
 
 export interface ActivityLogEntry {
   id: string;
@@ -105,7 +106,7 @@ export interface CertificateValidationResult {
 export interface MockIdentity {
   id: string;
   label: string;
-  category?: 'PID' | 'EAA Presets';
+  category?: string;
   description?: string;
   claims: Record<string, string>;
 }

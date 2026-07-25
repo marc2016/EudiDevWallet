@@ -1,5 +1,4 @@
-import { useCallback, useMemo, useState, type RefObject } from 'react';
-import type { Toast } from 'primereact/toast';
+import { useCallback, useMemo, useState } from 'react';
 import { useActivityLog } from '../log/ActivityLogContext';
 import { mockClaimValue } from '../log/activityLog';
 import { resolveAuthorizationRequest } from '../lib/fetchRequestObject';
@@ -8,6 +7,7 @@ import { validateCertificates } from '../lib/validateCertificates';
 import { buildResponse } from '../lib/buildResponse';
 import { sendResponse } from '../lib/sendResponse';
 import { formatVerifierError } from '../lib/formatVerifierError';
+import { resolveCredentialFormat } from '../lib/resolveCredentialFormat';
 import {
   loadCertificateMode,
   loadClearLogOnRequest,
@@ -24,19 +24,20 @@ import {
   saveSimulateOneTimeUse,
   saveTrustAnchorMode,
 } from '../settings/walletSettings';
-import { resolveCredentialFormat } from '../lib/resolveCredentialFormat';
-import { mockIdentities } from '../data/mockIdentities';
+import { addCustomIdentity, getAllIdentities } from '../data/mockIdentities';
+import { isCredentialOfferInput, resolveCredentialOfferAsync } from '../lib/parseCredentialOffer';
+import { sendCredentialNotification, simulateIssueCredential } from '../lib/issueCredential';
+import type { CredentialOffer, IssuedCredentialResult } from '../types/openid4vci';
 import type {
   AuthorizationRequest,
   CertificateMode,
   CertificateValidationResult,
   CredentialFormatSetting,
   ExtractedClaim,
+  MockIdentity,
   ResponseMode,
   TrustAnchorMode,
 } from '../types/openid4vp';
-
-export type ToastMode = 'all' | 'errors-only' | 'none';
 
 function decodeBase64Url(str: string): Record<string, unknown> | null {
   try {
@@ -53,15 +54,13 @@ function decodeBase64Url(str: string): Record<string, unknown> | null {
   }
 }
 
-interface UseWalletFlowOptions {
-  toast?: RefObject<Toast | null>;
-  toastMode?: ToastMode;
-}
+export interface WalletFlowOptions {}
 
-export function useWalletFlow(options: UseWalletFlowOptions = {}) {
-  const { toast, toastMode = 'all' } = options;
+export function useWalletFlow() {
   const { log, clear } = useActivityLog();
+  const anyLog = log as any;
 
+  const [identities, setIdentities] = useState<MockIdentity[]>(getAllIdentities);
   const [certificateMode, setCertificateModeState] = useState<CertificateMode>(loadCertificateMode);
   const [trustAnchorMode, setTrustAnchorModeState] = useState<TrustAnchorMode>(loadTrustAnchorMode);
   const [customTrustAnchors, setCustomTrustAnchorsState] = useState<string>(loadCustomTrustAnchors);
@@ -74,40 +73,129 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
   const [claims, setClaims] = useState<ExtractedClaim[]>([]);
   const [selectedClaims, setSelectedClaims] = useState<Record<string, boolean>>({});
   const [certResult, setCertResult] = useState<CertificateValidationResult | null>(null);
-  const [selectedIdentityId, setSelectedIdentityId] = useState(mockIdentities[0].id);
+  const [selectedIdentityId, setSelectedIdentityId] = useState(identities[0]?.id ?? 'max-mustermann');
   const [claimValues, setClaimValues] = useState<Record<string, string>>({});
   const [analyzing, setAnalyzing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [lastResult, setLastResult] = useState<{ ok: boolean; message: string } | undefined>();
   const [lastError, setLastError] = useState<string | undefined>();
 
-  const applyIdentity = useCallback((id: string, extracted: ExtractedClaim[]) => {
-    const identity = mockIdentities.find((m) => m.id === id) ?? mockIdentities[0];
-    const values: Record<string, string> = {};
-    for (const c of extracted) {
-      values[c.key] = mockClaimValue(identity.claims, c.key);
-    }
-    console.log('[useWalletFlow] applyIdentity setClaimValues:', values);
-    setClaimValues(values);
-  }, []);
+  // OpenID4VCI inline state
+  const [issuanceOffer, setIssuanceOffer] = useState<CredentialOffer | null>(null);
+  const [issuedCredentialResult, setIssuedCredentialResult] = useState<IssuedCredentialResult | null>(null);
+  const [issuancePinInput, setIssuancePinInput] = useState<string>('');
+  const [issuancePinError, setIssuancePinError] = useState<string | null>(null);
 
-  const showToast = useCallback(
-    (severity: 'success' | 'error', summary: string, detail: string) => {
-      if (toastMode === 'none') return;
-      if (toastMode === 'errors-only' && severity === 'success') return;
-      toast?.current?.show({ severity, summary, detail, life: severity === 'success' ? 3000 : 5000 });
+  const applyIdentity = useCallback(
+    (id: string, extracted: ExtractedClaim[]) => {
+      const identity = identities.find((m) => m.id === id) ?? identities[0];
+      const values: Record<string, string> = {};
+      if (identity) {
+        for (const c of extracted) {
+          values[c.key] = mockClaimValue(identity.claims, c.key);
+        }
+      }
+      console.log('[useWalletFlow] applyIdentity setClaimValues:', values);
+      setClaimValues(values);
     },
-    [toast, toastMode],
+    [identities]
   );
+
+  const showToast = useCallback((_severity: any, _summary: any, _detail: any) => {}, []);
+
+  const handleIssueCredential = async (pinOverride?: string): Promise<boolean> => {
+    if (!issuanceOffer) return false;
+    const pin = pinOverride ?? issuancePinInput;
+
+    const requiresPin =
+      issuanceOffer.grants?.['urn:ietf:params:oauth:grant-type:pre-authorized_code']?.user_pin_required;
+
+    if (requiresPin && !pin) {
+      setIssuancePinError('Bitte 6-stelligen PIN-Code eingeben');
+      return false;
+    }
+
+    setSubmitting(true);
+    setIssuancePinError(null);
+    log('info', 'o4vci', 'Token Endpoint Call & DPoP Key Binding gestartet', {
+      issuer: issuanceOffer.credential_issuer,
+      credentialTypes: issuanceOffer.credential_configuration_ids,
+    });
+
+    try {
+      const result = await simulateIssueCredential(
+        issuanceOffer,
+        undefined,
+        pin || undefined,
+        anyLog
+      );
+      const updatedIdentities = addCustomIdentity(result.identity);
+      setIdentities(updatedIdentities);
+      setSelectedIdentityId(result.identity.id);
+      setIssuedCredentialResult(result);
+
+      log('success', 'o4vci', `Credential "${result.identity.label}" erfolgreich ausgestellt & in Wallet gespeichert`, {
+        credentialId: result.credentialId,
+        format: result.format,
+      });
+
+      if (result.notification) {
+        const endpoint = issuanceOffer.notification_endpoint ?? `${issuanceOffer.credential_issuer}/notification`;
+        await sendCredentialNotification(endpoint, result.notification, log, result.accessToken);
+      }
+
+      showToast(
+        'success',
+        'Credential ausgestellt',
+        `"${result.identity.label}" wurde in der Wallet gespeichert.`
+      );
+      return true;
+    } catch (err) {
+      const msg = String(err);
+      setLastError(msg);
+      log('error', 'o4vci', 'Credential Ausstellung fehlgeschlagen', { error: msg });
+      showToast('error', 'Fehler bei Ausstellung', msg);
+      return false;
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleAnalyze = async (input: string): Promise<boolean> => {
     setAnalyzing(true);
     setLastResult(undefined);
     setLastError(undefined);
+    setIssuanceOffer(null);
+    setIssuedCredentialResult(null);
+    setIssuancePinInput('');
+    setIssuancePinError(null);
+
     try {
       if (loadClearLogOnRequest()) {
         clear();
       }
+
+      // Check if OpenID4VCI Issuance input
+      if (isCredentialOfferInput(input)) {
+        const offer = await resolveCredentialOfferAsync(input, anyLog);
+        setIssuanceOffer(offer);
+        setRequest(null);
+        setClaims([]);
+        setCertResult(null);
+
+        // Pre-fill pin if preset default available
+        const defaultPin = offer.grants?.['urn:ietf:params:oauth:grant-type:pre-authorized_code']?.tx_code?.description?.match(/\d{6}/)?.[0] ?? '123456';
+        setIssuancePinInput(defaultPin);
+
+        log('info', 'o4vci', `OpenID4VCI Credential Offer analysiert: ${offer.display_name || offer.credential_issuer}`, {
+          issuer: offer.credential_issuer,
+          credentials: offer.credential_configuration_ids,
+        });
+
+        showToast('success', 'Credential Offer erkannt', offer.display_name || offer.credential_issuer);
+        return true;
+      }
+
       const resolved = await resolveAuthorizationRequest(input, log);
       setRequest(resolved);
 
@@ -141,11 +229,13 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
 
   const handleIdentityChange = (id: string) => {
     setSelectedIdentityId(id);
-    const identity = mockIdentities.find((m) => m.id === id) ?? mockIdentities[0];
-    log('info', 'claims', `Identität zu "${identity.label}" gewechselt. Werte werden aktualisiert.`, {
-      identityId: id,
-      claimsCount: claims.length
-    });
+    const identity = identities.find((m) => m.id === id) ?? identities[0];
+    if (identity) {
+      log('info', 'claims', `Identität zu "${identity.label}" gewechselt. Werte werden aktualisiert.`, {
+        identityId: id,
+        claimsCount: claims.length,
+      });
+    }
     applyIdentity(id, claims);
   };
 
@@ -208,11 +298,11 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
             const vpTokenPlain = await buildResponse(request, selectedClaimsData, 'direct_post', vpFormat);
             const directPostParams = new URLSearchParams(vpTokenPlain.body as string);
             const plainVpToken = directPostParams.get('vp_token') ?? '';
-            
+
             const parts = plainVpToken.split('~');
             const issuerPayload = parts[0] ? decodeBase64Url(parts[0].split('.')[1] ?? '') : null;
             const kbPayload = parts[1] ? decodeBase64Url(parts[1].split('.')[1] ?? '') : null;
-            
+
             decodedDetails.unencryptedPayload = {
               state: request.state ?? '',
               vp_token: {
@@ -221,9 +311,9 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
                     issuerJwt: issuerPayload,
                     keyBindingJwt: kbPayload,
                     rawVpToken: plainVpToken,
-                  }
-                ]
-              }
+                  },
+                ],
+              },
             };
           } else {
             const vpTokenPlain = await buildResponse(request, selectedClaimsData, 'direct_post', vpFormat);
@@ -232,8 +322,8 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
             decodedDetails.unencryptedPayload = {
               state: request.state ?? '',
               vp_token: {
-                [request.dcql_query?.credentials?.[0]?.id ?? 'credential']: [plainVpToken]
-              }
+                [request.dcql_query?.credentials?.[0]?.id ?? 'credential']: [plainVpToken],
+              },
             };
           }
         } catch (e) {
@@ -243,7 +333,7 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
         const params = new URLSearchParams(built.body as string);
         const vpToken = params.get('vp_token') ?? '';
         const submission = params.get('presentation_submission') ?? '';
-        
+
         try {
           decodedDetails.presentationSubmission = JSON.parse(submission);
         } catch {
@@ -282,7 +372,7 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
         setRemainingCredentials((prev) => {
           const nextVal = prev - 1;
           log('info', 'claims', `PID-Credential verbraucht und gelöscht (Unlinkability). Verbleibende Credentials im Batch: ${nextVal}/5.`);
-          
+
           if (nextVal <= 1) {
             log('info', 'fetch', 'Automatischer Batch-Refresh gestartet (Zähler <= 1). DPoP-Proof wird erzeugt...');
             setTimeout(() => {
@@ -358,18 +448,24 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     setSelectedClaims({});
     setLastResult(undefined);
     setLastError(undefined);
-    setSelectedIdentityId(mockIdentities[0].id);
+    setIssuanceOffer(null);
+    setIssuedCredentialResult(null);
+    setIssuancePinInput('');
+    setIssuancePinError(null);
+    setSelectedIdentityId(identities[0]?.id ?? 'max-mustermann');
   };
 
   const disabledReason = useMemo(() => {
+    if (issuanceOffer) return undefined;
     if (!request) return 'Zuerst eine Anfrage analysieren';
     if (!request.response_uri) return 'response_uri fehlt in der Anfrage';
     if (certResult?.blocksApproval) return 'Zertifikatsprüfung fehlgeschlagen';
     if (claims.length === 0) return 'Keine Claims erkannt';
     return undefined;
-  }, [request, certResult, claims]);
+  }, [request, certResult, claims, issuanceOffer]);
 
   return {
+    identities,
     certificateMode,
     trustAnchorMode,
     customTrustAnchors,
@@ -388,6 +484,13 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     lastResult,
     lastError,
     disabledReason,
+    issuanceOffer,
+    issuedCredentialResult,
+    issuancePinInput,
+    issuancePinError,
+    isIssuanceFlow: Boolean(issuanceOffer),
+    setIssuancePinInput,
+    handleIssueCredential,
     handleAnalyze,
     handleIdentityChange,
     toggleClaimSelection,
@@ -404,3 +507,4 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     resetFlow,
   };
 }
+

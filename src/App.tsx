@@ -1,5 +1,4 @@
-import { useRef, useState } from 'react';
-import { Toast } from 'primereact/toast';
+import { useState } from 'react';
 import { AppToolbar } from './components/AppToolbar';
 import { DebugView } from './components/DebugView';
 import { SimpleView } from './components/SimpleView';
@@ -16,14 +15,10 @@ import {
 } from './settings/walletSettings';
 
 function AppContent() {
-  const toast = useRef<Toast>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(loadViewMode);
   const [colorScheme, setColorScheme] = useState<ColorScheme>(loadColorScheme);
 
-  const flow = useWalletFlow({
-    toast,
-    toastMode: viewMode === 'simple' ? 'errors-only' : 'all',
-  });
+  const flow = useWalletFlow();
 
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode);
@@ -44,7 +39,7 @@ function AppContent() {
         onViewModeChange={handleViewModeChange}
         onColorSchemeChange={handleColorSchemeChange}
       />
-      {viewMode === 'simple' ? <SimpleView flow={flow} /> : <DebugView flow={flow} toast={toast} />}
+      {viewMode === 'simple' ? <SimpleView flow={flow} /> : <DebugView flow={flow} />}
     </>
   );
 }

@@ -7,13 +7,21 @@ import { InputText } from 'primereact/inputtext';
 import { Checkbox } from 'primereact/checkbox';
 import { Tag } from 'primereact/tag';
 import { ProgressSpinner } from 'primereact/progressspinner';
-import { mockIdentities } from '../data/mockIdentities';
 import { SelectiveDisclosureModal } from './SelectiveDisclosureModal';
 import type { useWalletFlow } from '../hooks/useWalletFlow';
 
 type WalletFlow = ReturnType<typeof useWalletFlow>;
 
-type SimpleStep = 'url' | 'processing' | 'completed' | 'review' | 'submitting' | 'result' | 'error';
+type SimpleStep =
+  | 'url'
+  | 'processing'
+  | 'completed'
+  | 'review'
+  | 'issuance_review'
+  | 'submitting'
+  | 'result'
+  | 'issuance_result'
+  | 'error';
 
 function SuccessIcon() {
   return (
@@ -32,6 +40,8 @@ interface SimpleViewProps {
 
 function initialStep(flow: WalletFlow): SimpleStep {
   if (flow.lastResult) return 'result';
+  if (flow.issuedCredentialResult) return 'issuance_result';
+  if (flow.isIssuanceFlow) return 'issuance_review';
   if (flow.request && flow.claims.length > 0) return 'review';
   return 'url';
 }
@@ -66,9 +76,15 @@ export function SimpleView({ flow }: SimpleViewProps) {
 
   useEffect(() => {
     if (step !== 'completed') return;
-    const timer = window.setTimeout(() => changeStep('review'), 1000);
+    const timer = window.setTimeout(() => {
+      if (flow.isIssuanceFlow) {
+        changeStep('issuance_review');
+      } else {
+        changeStep('review');
+      }
+    }, 1000);
     return () => window.clearTimeout(timer);
-  }, [step, changeStep]);
+  }, [step, changeStep, flow.isIssuanceFlow]);
 
   const handleAnalyze = async () => {
     if (!url.trim()) return;
@@ -84,24 +100,52 @@ export function SimpleView({ flow }: SimpleViewProps) {
     changeStep(ok ? 'result' : 'error');
   };
 
+  const handleIssueCredentialInline = async () => {
+    changeStep('submitting');
+    const ok = await flow.handleIssueCredential();
+    changeStep(ok ? 'issuance_result' : 'error');
+  };
+
   const handleReset = () => {
     flow.resetFlow();
     setUrl('');
     changeStep('url');
   };
 
+  const customIdentities = flow.identities.filter(
+    (m) => m.category !== 'PID' && m.category !== 'EAA Presets'
+  );
+  const pidIdentities = flow.identities.filter((m) => !m.category || m.category === 'PID');
+  const eaaIdentities = flow.identities.filter((m) => m.category === 'EAA Presets');
+
   const groupedIdentities = [
+    ...(customIdentities.length > 0
+      ? [
+          {
+            label: '📥 Ausgestellte Credentials (OpenID4VCI)',
+            items: customIdentities.map((m) => ({
+              label: m.label,
+              value: m.id,
+              description: m.description,
+            })),
+          },
+        ]
+      : []),
     {
       label: '🆔 Personalausweis (PID)',
-      items: mockIdentities
-        .filter((m) => !m.category || m.category === 'PID')
-        .map((m) => ({ label: m.label, value: m.id, description: m.description })),
+      items: pidIdentities.map((m) => ({
+        label: m.label,
+        value: m.id,
+        description: m.description,
+      })),
     },
     {
       label: '💳 EAA Presets (Branchen-Szenarien)',
-      items: mockIdentities
-        .filter((m) => m.category === 'EAA Presets')
-        .map((m) => ({ label: m.label, value: m.id, description: m.description })),
+      items: eaaIdentities.map((m) => ({
+        label: m.label,
+        value: m.id,
+        description: m.description,
+      })),
     },
   ];
 
@@ -113,7 +157,7 @@ export function SimpleView({ flow }: SimpleViewProps) {
             <InputText
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="OpenID4VP URL"
+              placeholder="openid4vp://… oder openid-credential-offer://…"
               className="flex-1"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && url.trim()) void handleAnalyze();
@@ -157,6 +201,82 @@ export function SimpleView({ flow }: SimpleViewProps) {
             <span>Completed</span>
           </div>
         );
+
+      case 'issuance_review': {
+        const offer = flow.issuanceOffer;
+        if (!offer) return null;
+        const requiresPin =
+          offer.grants?.['urn:ietf:params:oauth:grant-type:pre-authorized_code']?.user_pin_required;
+
+        return (
+          <>
+            <div className="flex align-items-center justify-content-between mb-2">
+              <h2 className="simple-heading mb-0">📥 Credential Ausstellung (OpenID4VCI)</h2>
+              <Tag value={offer.credential_configuration_ids[0] ?? 'VC'} severity="info" />
+            </div>
+
+            <div className="surface-100 p-3 border-round mb-3 text-sm">
+              <div className="font-semibold text-base mb-1">
+                {offer.display_name || 'Neues Credential'}
+              </div>
+              <div className="text-xs text-color-secondary mb-2">
+                Issuer: <code>{offer.credential_issuer}</code>
+              </div>
+
+              {requiresPin && (
+                <div className="mt-3">
+                  <label className="block text-xs font-semibold mb-1">
+                    Authentifizierung — 6-stelliger PIN / TxCode:
+                  </label>
+                  <InputText
+                    value={flow.issuancePinInput}
+                    onChange={(e) => flow.setIssuancePinInput(e.target.value)}
+                    maxLength={6}
+                    className="w-full text-center text-lg font-mono tracking-widest mb-1"
+                    placeholder="123456"
+                  />
+                  {flow.issuancePinError && (
+                    <div className="text-red-500 text-xs font-semibold mb-1">
+                      {flow.issuancePinError}
+                    </div>
+                  )}
+                  <div className="text-xs text-blue-600">
+                    💡 Test-PIN: <strong>123456</strong>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="simple-review-actions">
+              <Button
+                label="Credential empfangen & in Wallet speichern"
+                icon="pi pi-download"
+                severity="success"
+                className="w-full"
+                onClick={() => void handleIssueCredentialInline()}
+              />
+            </div>
+          </>
+        );
+      }
+
+      case 'issuance_result': {
+        const result = flow.issuedCredentialResult;
+        return (
+          <>
+            <div className="simple-result-success">
+              <SuccessIcon />
+              <span>Credential erfolgreich empfangen!</span>
+            </div>
+            <p className="text-sm text-color-secondary text-center mt-2 mb-3">
+              Das Credential <strong>{result?.identity.label}</strong> wurde in deiner Wallet gespeichert und steht ab sofort im IdentityPicker bereit.
+            </p>
+            <div className="simple-result-actions">
+              <Button label="Neue Anfrage / Credential" onClick={handleReset} />
+            </div>
+          </>
+        );
+      }
 
       case 'review': {
         const totalDisclosed = flow.claims.filter((c) => flow.selectedClaims[c.key] !== false).length;
