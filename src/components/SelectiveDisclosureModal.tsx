@@ -82,7 +82,7 @@ export function SelectiveDisclosureModal({
         </div>
       }
       visible={visible}
-      style={{ width: '90vw', maxWidth: '36rem' }}
+      style={{ width: '90vw', maxWidth: '54rem' }}
       onHide={onHide}
       footer={footer}
       className="p-fluid"
