@@ -54,54 +54,142 @@ export function DebugView({ flow }: DebugViewProps) {
             {hasNextStep && (
               <div className="next-steps-animated">
                 {flow.isIssuanceFlow && flow.issuanceOffer ? (
-                  <div className="p-card p-component mb-2 p-3">
-                    <h3 className="text-lg font-bold mt-0 mb-2">
-                      OpenID4VCI Credential Ausstellung
-                    </h3>
-                    <div className="text-sm mb-2">
-                      <strong>Issuer:</strong> <code>{flow.issuanceOffer.credential_issuer}</code>
-                    </div>
-                    <div className="text-sm mb-2">
-                      <strong>Typ / Name:</strong> {flow.issuanceOffer.display_name || flow.issuanceOffer.credential_configuration_ids[0]}
-                    </div>
+                  <>
+                    {/* Card 2: Issuer Info */}
+                    <div className="p-card p-component p-3">
+                      <h3 className="text-lg font-bold mt-0 mb-3">
+                        OpenID4VCI Credential Ausstellung
+                      </h3>
 
-                    {flow.issuanceOffer.grants?.['urn:ietf:params:oauth:grant-type:pre-authorized_code']?.user_pin_required && (
-                      <div className="my-3">
-                        <label className="block text-xs font-semibold mb-1">
-                          Authentifizierung — 6-stelliger PIN / TxCode:
-                        </label>
-                        <input
-                          type="text"
-                          value={flow.issuancePinInput}
-                          onChange={(e) => flow.setIssuancePinInput(e.target.value)}
-                          maxLength={6}
-                          className="p-inputtext p-component w-full text-center text-lg font-mono tracking-widest"
-                          placeholder="123456"
-                        />
-                        {flow.issuancePinError && (
-                          <div className="text-red-500 text-xs font-semibold mt-1">
-                            {flow.issuancePinError}
+                      <div className="flex flex-column gap-2 mb-3">
+                        <div className="text-sm">
+                          <span className="text-color-secondary text-xs font-semibold uppercase" style={{ letterSpacing: '0.05em' }}>Issuer</span>
+                          <div className="mt-1 font-mono text-xs word-break-all">{flow.issuanceOffer.credential_issuer}</div>
+                        </div>
+
+                        <div className="text-sm">
+                          <span className="text-color-secondary text-xs font-semibold uppercase" style={{ letterSpacing: '0.05em' }}>Credential-Typ</span>
+                          <div className="mt-1 font-semibold">
+                            {flow.issuanceOffer.display_name && !flow.issuanceOffer.display_name.includes('Offer')
+                              ? flow.issuanceOffer.display_name
+                              : flow.issuanceOffer.credential_configuration_ids[0]}
+                          </div>
+                        </div>
+
+                        {flow.issuanceOffer.credential_configuration_ids.length > 1 && (
+                          <div className="text-sm">
+                            <span className="text-color-secondary text-xs font-semibold uppercase" style={{ letterSpacing: '0.05em' }}>Alle Typen</span>
+                            <div className="mt-1">
+                              {flow.issuanceOffer.credential_configuration_ids.map((id) => (
+                                <span key={id} className="p-tag p-tag-secondary mr-1 text-xs">{id}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {flow.issuanceOffer.grants?.['urn:ietf:params:oauth:grant-type:pre-authorized_code'] && (
+                          <div className="text-sm">
+                            <span className="text-color-secondary text-xs font-semibold uppercase" style={{ letterSpacing: '0.05em' }}>Grant-Typ</span>
+                            <div className="mt-1 font-mono text-xs">Pre-Authorized Code</div>
+                          </div>
+                        )}
+
+                        {flow.issuanceOffer.notification_endpoint && (
+                          <div className="text-sm">
+                            <span className="text-color-secondary text-xs font-semibold uppercase" style={{ letterSpacing: '0.05em' }}>Notification Endpoint</span>
+                            <div className="mt-1 font-mono text-xs word-break-all">{flow.issuanceOffer.notification_endpoint}</div>
                           </div>
                         )}
                       </div>
-                    )}
 
-                    {flow.issuedCredentialResult ? (
-                      <div className="p-2 border-round bg-green-100 text-green-800 text-xs font-semibold mb-2">
-                        ✅ Credential "{flow.issuedCredentialResult.identity.label}" erfolgreich ausgestellt & in Wallet gespeichert!
+                      {flow.issuanceOffer.grants?.['urn:ietf:params:oauth:grant-type:pre-authorized_code']?.user_pin_required && (
+                        <div className="my-3">
+                          <label className="block text-xs font-semibold mb-1">
+                            Authentifizierung — 6-stelliger PIN / TxCode:
+                          </label>
+                          <input
+                            type="text"
+                            value={flow.issuancePinInput}
+                            onChange={(e) => flow.setIssuancePinInput(e.target.value)}
+                            maxLength={6}
+                            className="p-inputtext p-component w-full text-center text-lg font-mono tracking-widest"
+                            placeholder="123456"
+                          />
+                          {flow.issuancePinError && (
+                            <div className="text-red-500 text-xs font-semibold mt-1">
+                              {flow.issuancePinError}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {!flow.issuedCredentialResult && (
+                        <button
+                          type="button"
+                          className="p-button p-component p-button-success w-full mt-2"
+                          onClick={() => void flow.handleIssueCredential()}
+                          disabled={flow.submitting}
+                        >
+                          <span className="p-button-icon p-button-icon-left pi pi-download" />
+                          <span className="p-button-label">Credential ausstellen & in Wallet speichern</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Card 3: Result — only shown after issuance, slides in from bottom */}
+                    {flow.issuedCredentialResult && (
+                      <div className="p-card p-component p-3 card-slide-in">
+                        <div className="flex align-items-center gap-2 mb-3">
+                          <span className="pi pi-check-circle text-green-500" style={{ fontSize: '1.25rem' }} />
+                          <h3 className="text-lg font-bold m-0 text-green-600">
+                            Credential erfolgreich ausgestellt
+                          </h3>
+                        </div>
+
+                        <div className="flex flex-column gap-2">
+                          <div className="text-sm">
+                            <span className="text-color-secondary text-xs font-semibold uppercase" style={{ letterSpacing: '0.05em' }}>Name</span>
+                            <div className="mt-1 font-semibold">{flow.issuedCredentialResult.identity.label}</div>
+                          </div>
+
+                          {flow.issuedCredentialResult.identity.description && (
+                            <div className="text-sm">
+                              <span className="text-color-secondary text-xs font-semibold uppercase" style={{ letterSpacing: '0.05em' }}>Beschreibung</span>
+                              <div className="mt-1">{flow.issuedCredentialResult.identity.description}</div>
+                            </div>
+                          )}
+
+                          {flow.issuedCredentialResult.format && (
+                            <div className="text-sm">
+                              <span className="text-color-secondary text-xs font-semibold uppercase" style={{ letterSpacing: '0.05em' }}>Format</span>
+                              <div className="mt-1 font-mono text-xs">{flow.issuedCredentialResult.format}</div>
+                            </div>
+                          )}
+
+                          {Object.keys(flow.issuedCredentialResult.identity.claims).length > 0 && (
+                            <div className="text-sm">
+                              <span className="text-color-secondary text-xs font-semibold uppercase" style={{ letterSpacing: '0.05em' }}>Claims</span>
+                              <div className="mt-2 flex flex-column gap-1">
+                                {Object.entries(flow.issuedCredentialResult.identity.claims).map(([key, value]) => (
+                                  <div key={key} className="flex align-items-start gap-2 text-xs">
+                                    <span className="font-semibold" style={{ minWidth: '8rem', color: 'var(--text-color-secondary)' }}>{key}</span>
+                                    <span className="word-break-all">{value}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {flow.issuedCredentialResult.credentialId && (
+                            <div className="text-sm">
+                              <span className="text-color-secondary text-xs font-semibold uppercase" style={{ letterSpacing: '0.05em' }}>Credential ID</span>
+                              <div className="mt-1 font-mono text-xs word-break-all">{flow.issuedCredentialResult.credentialId}</div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    ) : (
-                      <button
-                        type="button"
-                        className="p-button p-component p-button-success w-full mt-2"
-                        onClick={() => void flow.handleIssueCredential()}
-                        disabled={flow.submitting}
-                      >
-                        <span className="p-button-icon p-button-icon-left pi pi-download" />
-                        <span className="p-button-label">Credential ausstellen & in Wallet speichern</span>
-                      </button>
                     )}
-                  </div>
+                  </>
                 ) : (
                   <>
                     <RequestSummary

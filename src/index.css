@@ -351,6 +351,11 @@ body {
   }
 }
 
+/* Result card: always animates fresh when it mounts */
+.card-slide-in {
+  animation: slideInFromBottom 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 .log-column {
   min-width: 0;
   padding: 0.5rem 0.5rem 0.5rem 0.25rem;
