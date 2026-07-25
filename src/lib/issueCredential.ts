@@ -167,6 +167,97 @@ export async function generateProofJwt(issuer: string, nonce?: string): Promise<
   return `${unsignedToken}.${encodedSignature}`;
 }
 
+
+
+export function parseIssuedCredentialClaims(credentialData: unknown): {
+  claims: Record<string, string>;
+  format?: string;
+  vct?: string;
+} {
+  const extractedClaims: Record<string, string> = {};
+  let detectedFormat: string | undefined = undefined;
+  let vct: string | undefined = undefined;
+
+  let raw: unknown = credentialData;
+  if (raw && typeof raw === 'object' && raw !== null && !Array.isArray(raw)) {
+    const rawObj = raw as Record<string, unknown>;
+    if (rawObj.credential) raw = rawObj.credential;
+    else if (Array.isArray(rawObj.credentials) && rawObj.credentials.length > 0) {
+      const first = rawObj.credentials[0];
+      raw = typeof first === 'object' && first !== null && 'credential' in first ? first.credential : first;
+    }
+  } else if (Array.isArray(raw) && raw.length > 0) {
+    const first = raw[0];
+    raw = typeof first === 'object' && first !== null && 'credential' in first ? first.credential : first;
+  }
+
+  if (typeof raw === 'string') {
+    if (raw.includes('~')) {
+      detectedFormat = 'vc+sd-jwt';
+      const parts = raw.split('~');
+
+      const jwtPart = parts[0];
+      const jwtTokens = jwtPart.split('.');
+      if (jwtTokens.length >= 2) {
+        try {
+          const payloadBase64 = jwtTokens[1].replace(/-/g, '+').replace(/_/g, '/');
+          const payloadJson = JSON.parse(atob(payloadBase64));
+          if (payloadJson.vct) vct = String(payloadJson.vct);
+          if (payloadJson.iss) extractedClaims['issuing_authority'] = String(payloadJson.iss);
+        } catch {
+          // ignore
+        }
+      }
+
+      for (let i = 1; i < parts.length; i++) {
+        const part = parts[i].trim();
+        if (!part) continue;
+        try {
+          const base64 = part.replace(/-/g, '+').replace(/_/g, '/');
+          const decoded = atob(base64);
+          const parsed = JSON.parse(decoded);
+          if (Array.isArray(parsed) && parsed.length >= 3 && typeof parsed[1] === 'string') {
+            const key = parsed[1];
+            const val = parsed[2];
+            extractedClaims[key] = typeof val === 'object' ? JSON.stringify(val) : String(val);
+          }
+        } catch {
+          // ignore non-disclosure parts
+        }
+      }
+    } else if (raw.includes('.')) {
+      detectedFormat = 'vc+sd-jwt';
+      const jwtTokens = raw.split('.');
+      if (jwtTokens.length >= 2) {
+        try {
+          const payloadBase64 = jwtTokens[1].replace(/-/g, '+').replace(/_/g, '/');
+          const payloadJson = JSON.parse(atob(payloadBase64));
+          if (payloadJson.vc?.credentialSubject && typeof payloadJson.vc.credentialSubject === 'object') {
+            for (const [k, v] of Object.entries(payloadJson.vc.credentialSubject)) {
+              if (k !== 'id') extractedClaims[k] = typeof v === 'object' ? JSON.stringify(v) : String(v);
+            }
+          } else {
+            for (const [k, v] of Object.entries(payloadJson)) {
+              if (!['iss', 'sub', 'iat', 'exp', 'nbf', 'jti'].includes(k)) {
+                extractedClaims[k] = typeof v === 'object' ? JSON.stringify(v) : String(v);
+              }
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+  } else if (raw && typeof raw === 'object') {
+    const rawObj = raw as Record<string, unknown>;
+    for (const [k, v] of Object.entries(rawObj)) {
+      extractedClaims[k] = typeof v === 'object' ? JSON.stringify(v) : String(v);
+    }
+  }
+
+  return { claims: extractedClaims, format: detectedFormat, vct };
+}
+
 export async function requestLiveCredentialFromIssuer(
   offer: CredentialOffer,
   bearerToken?: string,
@@ -181,51 +272,33 @@ export async function requestLiveCredentialFromIssuer(
     ? `${offer.credential_issuer}/credential`
     : `${offer.credential_issuer}/vci/credential`;
 
+  let proofJwt: string | undefined;
   try {
-    let finalNonce = cNonce;
-    if (!finalNonce) {
-      const nonceEndpoint = offer.credential_issuer.endsWith('/vci')
-        ? `${offer.credential_issuer}/nonce`
-        : `${offer.credential_issuer}/vci/nonce`;
-      
-      try {
-        const nonceRes = await fetch(nonceEndpoint, {
-          method: 'POST',
-          headers: bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {},
-        });
-        if (nonceRes.ok) {
-          const nonceData = await nonceRes.json() as { c_nonce?: string };
-          if (nonceData.c_nonce) {
-            finalNonce = nonceData.c_nonce;
-            log?.('info', 'o4vci', `Neue c_nonce vom Nonce-Endpoint abgerufen`, { c_nonce: finalNonce });
-          }
-        }
-      } catch (e) {
-        log?.('warn', 'o4vci', `Fehler beim Abrufen der c_nonce vom Nonce-Endpoint`, { error: String(e) });
-      }
-    }
+    proofJwt = await generateProofJwt(offer.credential_issuer, cNonce);
+  } catch (err) {
+    log?.('warn', 'o4vci', `Konnte Proof JWT für Credential Endpoint nicht erzeugen: ${String(err)}`);
+  }
 
-    const proofJwt = await generateProofJwt(offer.credential_issuer, finalNonce);
-    const rawConfigId = offer.credential_configuration_ids[0];
-    const configId = (!rawConfigId || rawConfigId === 'eu.europa.ec.eudi.pid.1') ? 'pid' : rawConfigId;
+  const tokenToUse = bearerToken || 'simulated-bearer-token';
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${tokenToUse}`,
+  };
 
-    const body = {
-      credential_configuration_id: configId,
-      proof: {
-        proof_type: 'jwt',
-        jwt: proofJwt,
-      },
+  const body: Record<string, unknown> = {
+    credential_configuration_id: offer.credential_configuration_ids[0] || 'loyalty-card',
+  };
+
+  if (proofJwt) {
+    body.proof = {
+      proof_type: 'jwt',
+      jwt: proofJwt,
     };
+  }
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (bearerToken) {
-      headers['Authorization'] = `Bearer ${bearerToken}`;
-    }
-
+  try {
     log?.('info', 'o4vci', `Live Credential POST (${credentialEndpoint}) mit Holder Proof JWT gestartet`, {
-      credential_configuration_id: configId,
+      credential_configuration_id: body.credential_configuration_id,
       hasBearerToken: Boolean(bearerToken),
     });
 
@@ -239,7 +312,7 @@ export async function requestLiveCredentialFromIssuer(
       const data = (await res.json()) as Record<string, unknown>;
       log?.('success', 'o4vci', `Echtes Credential & Token von Issuer (${credentialEndpoint}) empfangen`, data);
       return {
-        credential: data.credential,
+        credential: data.credential ?? data.credentials ?? data,
         notification_id: typeof data.notification_id === 'string' ? data.notification_id : undefined,
         access_token: typeof data.access_token === 'string' ? data.access_token : undefined,
       };
@@ -273,6 +346,7 @@ export async function simulateIssueCredential(
 
   let accessToken: string | undefined;
   let notificationId = `notif-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  let liveCredentialData: unknown = undefined;
 
   if (offer.credential_issuer.startsWith('http')) {
     const tokenData = await fetchOpenID4VCIAccessToken(offer, pin, log);
@@ -287,27 +361,63 @@ export async function simulateIssueCredential(
       if (liveResult.notification_id) {
         notificationId = liveResult.notification_id;
       }
+      if (liveResult.credential) {
+        liveCredentialData = liveResult.credential;
+      }
     }
   }
 
   const preset = ISSUANCE_PRESETS.find((p) => p.id === offer.preset_id);
 
+  let liveClaims: Record<string, string> = {};
+  if (liveCredentialData) {
+    const parsed = parseIssuedCredentialClaims(liveCredentialData);
+    liveClaims = parsed.claims;
+    if (Object.keys(liveClaims).length > 0) {
+      log?.('info', 'o4vci', `Aus echtem Issuer Credential (SD-JWT) extrahierte Claims (${Object.keys(liveClaims).length}):`, liveClaims);
+    }
+  }
+
+  const defaultFallbackClaims = {
+    given_name: 'Max',
+    family_name: 'Mustermann',
+    birth_date: '1990-01-15',
+    document_type: offer.credential_configuration_ids[0] ?? 'Custom EAA',
+    issuing_authority: offer.credential_issuer,
+    issue_date: new Date().toISOString().split('T')[0] ?? '',
+  };
+
+  const hasLiveClaims = Object.keys(liveClaims).length > 0;
   const claims: Record<string, string> = {
-    ...(preset?.claims ?? {
-      given_name: 'Max',
-      family_name: 'Mustermann',
-      birth_date: '1990-01-15',
-      document_type: offer.credential_configuration_ids[0] ?? 'Custom EAA',
-      issuing_authority: offer.credential_issuer,
-      issue_date: new Date().toISOString().split('T')[0] ?? '',
-    }),
+    ...(hasLiveClaims ? liveClaims : preset?.claims ?? defaultFallbackClaims),
     ...userClaimsOverride,
   };
 
+  if (!claims.document_type) {
+    claims.document_type = offer.credential_configuration_ids[0] ?? 'Custom EAA';
+  }
+  if (!claims.issuing_authority) {
+    claims.issuing_authority = offer.credential_issuer;
+  }
+
   const id = `issued-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-  const label = preset?.label ?? `📥 ${offer.display_name || offer.credential_configuration_ids[0]}`;
+
+  let label = preset?.label;
+  if (!label) {
+    if (claims.organization_name) {
+      const org = claims.organization_name;
+      label = org.toLowerCase().includes('fitlife') ? 'FitLife Mitgliedschaft' : `${org} Mitgliedschaft`;
+    } else if (offer.display_name && !offer.display_name.includes('Offer')) {
+      label = offer.display_name;
+    } else {
+      label = offer.credential_configuration_ids[0] || 'Credential';
+    }
+  }
+
   const category = preset?.category ?? 'Ausgestellte Credentials';
-  const description = preset?.description ?? `Erfolgreich von ${offer.credential_issuer} empfangen`;
+  const description = claims.organization_name
+    ? `Digitale Mitgliedskarte für ${claims.organization_name}`
+    : (preset?.description ?? `Erfolgreich von ${offer.credential_issuer} empfangen`);
 
   const identity: MockIdentity = {
     id,

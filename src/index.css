@@ -318,6 +318,39 @@ body {
   padding: 0.5rem;
 }
 
+.next-steps-animated {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.next-steps-animated > * {
+  animation: slideInFromBottom 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.next-steps-animated > *:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.next-steps-animated > *:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.next-steps-animated > *:nth-child(3) {
+  animation-delay: 0.25s;
+}
+
+@keyframes slideInFromBottom {
+  0% {
+    opacity: 0;
+    transform: translateY(80vh);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .log-column {
   min-width: 0;
   padding: 0.5rem 0.5rem 0.5rem 0.25rem;
