@@ -93,7 +93,7 @@ export async function fetchOpenID4VCIAccessToken(
         } catch {
           errBody = await res.text();
         }
-        log?.('info', 'o4vci', `Token Endpoint POST (${endpoint}) → HTTP ${res.status}`, {
+        log?.(res.status >= 400 ? 'warn' : 'info', 'o4vci', `Token Endpoint POST (${endpoint}) → HTTP ${res.status}`, {
           status: res.status,
           response: errBody,
         });
@@ -103,7 +103,7 @@ export async function fetchOpenID4VCIAccessToken(
         }
       }
     } catch (err) {
-      log?.('info', 'o4vci', `Token Endpoint POST (${endpoint}) nicht erreichbar: ${String(err)}`);
+      log?.('warn', 'o4vci', `Token Endpoint POST (${endpoint}) nicht erreichbar: ${String(err)}`);
     }
   }
 
@@ -381,7 +381,7 @@ export async function sendCredentialNotification(
       }
 
       if (fallbackEndpoint) {
-        log?.('info', 'o4vci', `Primary Notification Endpoint HTTP 404 → Versuche Fallback-Endpoint: ${fallbackEndpoint}`);
+        log?.('warn', 'o4vci', `Primary Notification Endpoint HTTP 404 → Versuche Fallback-Endpoint: ${fallbackEndpoint}`);
         return await sendCredentialNotification(fallbackEndpoint, notificationPayload, log, accessToken);
       }
     }

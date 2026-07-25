@@ -9,6 +9,26 @@ import { formatLogDetails, formatLogTime } from '../log/activityLog';
 import { loadClearLogOnRequest, saveClearLogOnRequest } from '../settings/walletSettings';
 import type { ActivityLogEntry, LogLevel } from '../types/openid4vp';
 
+function getEffectiveLevel(entry: ActivityLogEntry): LogLevel {
+  if (entry.level === 'error' || entry.level === 'warn') {
+    return entry.level;
+  }
+
+  const message = entry.message || '';
+  if (/\b(4\d\d|5\d\d)\b/.test(message) || /HTTP\s+[45]\d\d/i.test(message)) {
+    return 'warn';
+  }
+
+  if (entry.details && typeof entry.details === 'object' && entry.details !== null) {
+    const detailsObj = entry.details as Record<string, unknown>;
+    if (typeof detailsObj.status === 'number' && detailsObj.status >= 400) {
+      return 'warn';
+    }
+  }
+
+  return entry.level;
+}
+
 function levelIcon(level: LogLevel): string {
   switch (level) {
     case 'success':
@@ -131,12 +151,15 @@ export function ActivityLogPanel() {
                 <Tag value={item.category} severity="secondary" className="mt-1" />
               </div>
             )}
-            marker={(item: ActivityLogEntry) => (
-              <i
-                className={levelIcon(item.level)}
-                style={{ color: levelColor(item.level), fontSize: '1.1rem' }}
-              />
-            )}
+            marker={(item: ActivityLogEntry) => {
+              const effLevel = getEffectiveLevel(item);
+              return (
+                <i
+                  className={levelIcon(effLevel)}
+                  style={{ color: levelColor(effLevel), fontSize: '1.1rem' }}
+                />
+              );
+            }}
             content={(item: ActivityLogEntry) => <TimelineItem entry={item} />}
           />
         )}

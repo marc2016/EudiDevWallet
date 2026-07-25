@@ -10,7 +10,7 @@ async function fetchPresentationDefinition(uri: string, log?: LogFn) {
   try {
     const res = await fetch(uri);
     const duration = Math.round(performance.now() - start);
-    log?.('info', 'fetch', `presentation_definition_uri → ${res.status}`, {
+    log?.(res.ok ? 'info' : 'warn', 'fetch', `presentation_definition_uri → ${res.status}`, {
       url: uri,
       status: res.status,
       durationMs: duration,
@@ -31,7 +31,7 @@ async function fetchClientMetadata(uri: string, log?: LogFn) {
   try {
     const res = await fetch(uri);
     const duration = Math.round(performance.now() - start);
-    log?.('info', 'fetch', `client_metadata_uri → ${res.status}`, {
+    log?.(res.ok ? 'info' : 'warn', 'fetch', `client_metadata_uri → ${res.status}`, {
       url: uri,
       status: res.status,
       durationMs: duration,
