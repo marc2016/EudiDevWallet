@@ -41,12 +41,14 @@ export function extractCertificatesFromRequest(request: AuthorizationRequest): {
 
   if (wrprcRaw) {
     try {
-      wrprc =
-        typeof wrprcRaw === 'string' && wrprcRaw.includes('.')
-          ? (decodeJwt(wrprcRaw) as Record<string, unknown>)
-          : typeof wrprcRaw === 'string'
-            ? (JSON.parse(wrprcRaw) as Record<string, unknown>)
-            : (wrprcRaw as Record<string, unknown>);
+      if (typeof wrprcRaw === 'string') {
+        wrprc =
+          wrprcRaw.split('.').length === 3
+            ? (decodeJwt(wrprcRaw) as Record<string, unknown>)
+            : (JSON.parse(wrprcRaw) as Record<string, unknown>);
+      } else {
+        wrprc = wrprcRaw as Record<string, unknown>;
+      }
     } catch {
       wrprc = { raw: wrprcRaw };
     }

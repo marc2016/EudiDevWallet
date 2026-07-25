@@ -12,13 +12,17 @@ import {
   loadCertificateMode,
   loadClearLogOnRequest,
   loadCredentialFormat,
+  loadCustomTrustAnchors,
   loadResponseMode,
   loadSimulateOneTimeUse,
+  loadTrustAnchorMode,
   resolveResponseMode,
   saveCertificateMode,
   saveCredentialFormat,
+  saveCustomTrustAnchors,
   saveResponseMode,
   saveSimulateOneTimeUse,
+  saveTrustAnchorMode,
 } from '../settings/walletSettings';
 import { resolveCredentialFormat } from '../lib/resolveCredentialFormat';
 import { mockIdentities } from '../data/mockIdentities';
@@ -29,6 +33,7 @@ import type {
   CredentialFormatSetting,
   ExtractedClaim,
   ResponseMode,
+  TrustAnchorMode,
 } from '../types/openid4vp';
 
 export type ToastMode = 'all' | 'errors-only' | 'none';
@@ -58,6 +63,8 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
   const { log, clear } = useActivityLog();
 
   const [certificateMode, setCertificateModeState] = useState<CertificateMode>(loadCertificateMode);
+  const [trustAnchorMode, setTrustAnchorModeState] = useState<TrustAnchorMode>(loadTrustAnchorMode);
+  const [customTrustAnchors, setCustomTrustAnchorsState] = useState<string>(loadCustomTrustAnchors);
   const [responseMode, setResponseModeState] = useState<ResponseMode>(loadResponseMode);
   const [credentialFormat, setCredentialFormatState] =
     useState<CredentialFormatSetting>(loadCredentialFormat);
@@ -114,7 +121,7 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
       }
       setSelectedClaims(initialSelected);
 
-      const cert = await validateCertificates(resolved, certificateMode, log);
+      const cert = await validateCertificates(resolved, certificateMode, trustAnchorMode, customTrustAnchors, log);
       setCertResult(cert);
 
       applyIdentity(selectedIdentityId, extracted);
@@ -292,7 +299,23 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     setCertificateModeState(mode);
     saveCertificateMode(mode);
     if (request) {
-      validateCertificates(request, mode, log).then(setCertResult);
+      validateCertificates(request, mode, trustAnchorMode, customTrustAnchors, log).then(setCertResult);
+    }
+  };
+
+  const setTrustAnchorMode = (mode: TrustAnchorMode) => {
+    setTrustAnchorModeState(mode);
+    saveTrustAnchorMode(mode);
+    if (request) {
+      validateCertificates(request, certificateMode, mode, customTrustAnchors, log).then(setCertResult);
+    }
+  };
+
+  const setCustomTrustAnchors = (anchors: string) => {
+    setCustomTrustAnchorsState(anchors);
+    saveCustomTrustAnchors(anchors);
+    if (request) {
+      validateCertificates(request, certificateMode, trustAnchorMode, anchors, log).then(setCertResult);
     }
   };
 
@@ -332,6 +355,8 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
 
   return {
     certificateMode,
+    trustAnchorMode,
+    customTrustAnchors,
     responseMode,
     credentialFormat,
     simulateOneTimeUse,
@@ -352,6 +377,8 @@ export function useWalletFlow(options: UseWalletFlowOptions = {}) {
     toggleClaimSelection,
     handleApprove,
     setCertificateMode,
+    setTrustAnchorMode,
+    setCustomTrustAnchors,
     setResponseMode,
     setCredentialFormat,
     setSimulateOneTimeUse,

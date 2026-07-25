@@ -1,4 +1,4 @@
-import type { CertificateMode, CredentialFormatSetting, ResponseMode } from '../types/openid4vp';
+import type { CertificateMode, CredentialFormatSetting, ResponseMode, TrustAnchorMode } from '../types/openid4vp';
 
 const CERT_KEY = 'edw_certificate_mode';
 const RESPONSE_KEY = 'edw_response_mode';
@@ -7,6 +7,8 @@ const VIEW_KEY = 'edw_view_mode';
 const COLOR_SCHEME_KEY = 'edw_color_scheme';
 const CLEAR_LOG_ON_REQUEST_KEY = 'edw_clear_log_on_request';
 const SIMULATE_ONE_TIME_USE_KEY = 'edw_simulate_one_time_use';
+const TRUST_ANCHOR_MODE_KEY = 'edw_trust_anchor_mode';
+const CUSTOM_TRUST_ANCHORS_KEY = 'edw_custom_trust_anchors';
 
 export type ViewMode = 'simple' | 'debug';
 export type ColorScheme = 'light' | 'dark';
@@ -37,6 +39,30 @@ export const CERTIFICATE_MODE_OPTIONS = [
   { label: 'Weiche Prüfung', value: 'soft' as CertificateMode },
   { label: 'Strikte Prüfung', value: 'strict' as CertificateMode },
 ];
+
+export const TRUST_ANCHOR_MODE_OPTIONS = [
+  { label: 'EUDI CA (Offiziell)', value: 'eudi_ca' as TrustAnchorMode },
+  { label: 'Benutzerdefiniert (Custom CAs)', value: 'custom' as TrustAnchorMode },
+  { label: 'Mock / Dev (Alle zulassen)', value: 'mock' as TrustAnchorMode },
+];
+
+export function loadTrustAnchorMode(): TrustAnchorMode {
+  const v = localStorage.getItem(TRUST_ANCHOR_MODE_KEY);
+  if (v === 'custom' || v === 'mock') return v;
+  return 'eudi_ca';
+}
+
+export function saveTrustAnchorMode(mode: TrustAnchorMode): void {
+  localStorage.setItem(TRUST_ANCHOR_MODE_KEY, mode);
+}
+
+export function loadCustomTrustAnchors(): string {
+  return localStorage.getItem(CUSTOM_TRUST_ANCHORS_KEY) ?? 'Relying Party Registrar, EUDI Trust CA, DE EUDI Wallet RP CA';
+}
+
+export function saveCustomTrustAnchors(anchors: string): void {
+  localStorage.setItem(CUSTOM_TRUST_ANCHORS_KEY, anchors);
+}
 
 export const RESPONSE_MODE_OPTIONS = [
   { label: 'Auto', value: 'auto' as ResponseMode },

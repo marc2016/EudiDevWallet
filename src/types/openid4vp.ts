@@ -83,6 +83,8 @@ export interface CertificateInfo {
   raw?: string;
 }
 
+export type TrustAnchorMode = 'eudi_ca' | 'custom' | 'mock';
+
 export interface CertificateValidationResult {
   valid: boolean;
   level: 'success' | 'warn' | 'error';
@@ -91,6 +93,9 @@ export interface CertificateValidationResult {
   wrprc?: Record<string, unknown>;
   signatureValid?: boolean;
   blocksApproval: boolean;
+  clientIdMatchValid?: boolean;
+  wrprcScopeValid?: boolean;
+  trustAnchorValid?: boolean;
 }
 
 export interface MockIdentity {

@@ -29,10 +29,14 @@ export function DebugView({ flow, toast }: DebugViewProps) {
               loading={flow.analyzing}
               settings={{
                 certificateMode: flow.certificateMode,
+                trustAnchorMode: flow.trustAnchorMode,
+                customTrustAnchors: flow.customTrustAnchors,
                 responseMode: flow.responseMode,
                 credentialFormat: flow.credentialFormat,
                 simulateOneTimeUse: flow.simulateOneTimeUse,
                 onCertificateModeChange: flow.setCertificateMode,
+                onTrustAnchorModeChange: flow.setTrustAnchorMode,
+                onCustomTrustAnchorsChange: flow.setCustomTrustAnchors,
                 onResponseModeChange: flow.setResponseMode,
                 onCredentialFormatChange: flow.setCredentialFormat,
                 onSimulateOneTimeUseChange: flow.setSimulateOneTimeUse,

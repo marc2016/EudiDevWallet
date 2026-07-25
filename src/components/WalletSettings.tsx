@@ -1,22 +1,30 @@
 import { Dropdown } from 'primereact/dropdown';
 import { Checkbox } from 'primereact/checkbox';
+import { InputText } from 'primereact/inputtext';
 import {
   CERTIFICATE_MODE_OPTIONS,
   CREDENTIAL_FORMAT_OPTIONS,
   RESPONSE_MODE_OPTIONS,
+  TRUST_ANCHOR_MODE_OPTIONS,
   saveCertificateMode,
   saveCredentialFormat,
+  saveCustomTrustAnchors,
   saveResponseMode,
   saveSimulateOneTimeUse,
+  saveTrustAnchorMode,
 } from '../settings/walletSettings';
-import type { CertificateMode, CredentialFormatSetting, ResponseMode } from '../types/openid4vp';
+import type { CertificateMode, CredentialFormatSetting, ResponseMode, TrustAnchorMode } from '../types/openid4vp';
 
 export interface WalletSettingsProps {
   certificateMode: CertificateMode;
+  trustAnchorMode?: TrustAnchorMode;
+  customTrustAnchors?: string;
   responseMode: ResponseMode;
   credentialFormat: CredentialFormatSetting;
   simulateOneTimeUse: boolean;
   onCertificateModeChange: (m: CertificateMode) => void;
+  onTrustAnchorModeChange?: (m: TrustAnchorMode) => void;
+  onCustomTrustAnchorsChange?: (v: string) => void;
   onResponseModeChange: (m: ResponseMode) => void;
   onCredentialFormatChange: (f: CredentialFormatSetting) => void;
   onSimulateOneTimeUseChange: (v: boolean) => void;
@@ -24,10 +32,14 @@ export interface WalletSettingsProps {
 
 export function WalletSettings({
   certificateMode,
+  trustAnchorMode = 'eudi_ca',
+  customTrustAnchors = '',
   responseMode,
   credentialFormat,
   simulateOneTimeUse,
   onCertificateModeChange,
+  onTrustAnchorModeChange,
+  onCustomTrustAnchorsChange,
   onResponseModeChange,
   onCredentialFormatChange,
   onSimulateOneTimeUseChange,
@@ -56,6 +68,25 @@ export function WalletSettings({
               if (e.value) {
                 saveCertificateMode(e.value);
                 onCertificateModeChange(e.value);
+              }
+            }}
+            className="w-full settings-dropdown"
+          />
+        </div>
+        <div className="wallet-settings-group">
+          <label className="text-sm font-medium text-color-secondary" htmlFor="trust-anchor-mode">
+            Trust Anchor
+          </label>
+          <Dropdown
+            inputId="trust-anchor-mode"
+            value={trustAnchorMode}
+            options={TRUST_ANCHOR_MODE_OPTIONS}
+            optionLabel="label"
+            optionValue="value"
+            onChange={(e) => {
+              if (e.value) {
+                saveTrustAnchorMode(e.value);
+                onTrustAnchorModeChange?.(e.value);
               }
             }}
             className="w-full settings-dropdown"
@@ -100,6 +131,26 @@ export function WalletSettings({
           />
         </div>
       </div>
+
+      {trustAnchorMode === 'custom' && (
+        <div className="wallet-settings-group w-full px-1">
+          <label className="text-sm font-medium text-color-secondary" htmlFor="custom-trust-anchors">
+            Benutzerdefinierte Trust Anchors / CAs (kommagetrennt)
+          </label>
+          <InputText
+            id="custom-trust-anchors"
+            value={customTrustAnchors}
+            placeholder="z. B. Relying Party Registrar, My Test Root CA"
+            onChange={(e) => {
+              const val = e.target.value;
+              saveCustomTrustAnchors(val);
+              onCustomTrustAnchorsChange?.(val);
+            }}
+            className="w-full text-sm mt-1"
+          />
+        </div>
+      )}
+
       <div className="flex align-items-center gap-2 px-1 mb-1">
         <Checkbox
           inputId="simulate-otu"

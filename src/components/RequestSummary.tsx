@@ -54,10 +54,10 @@ export function RequestSummary({ request, certMode, certResult }: RequestSummary
       {certMode !== 'off' && certResult && (
         <>
           <Divider />
-          <div className="flex align-items-center gap-2 mb-2">
-            <span className="font-medium text-sm">Zertifikate</span>
+          <div className="flex align-items-center justify-content-between mb-2">
+            <span className="font-medium text-sm">Zertifikate & Trust-Validierung</span>
             <Tag
-              value={certResult.level === 'success' ? 'OK' : certResult.level === 'warn' ? 'Warnung' : 'Fehler'}
+              value={certResult.level === 'success' ? 'GÜLTIG' : certResult.level === 'warn' ? 'WARNUNG' : 'BLOCKIERT'}
               severity={
                 certResult.level === 'success'
                   ? 'success'
@@ -67,20 +67,58 @@ export function RequestSummary({ request, certMode, certResult }: RequestSummary
               }
             />
           </div>
-          {certResult.messages.map((m, i) => (
-            <Message
-              key={i}
-              severity={
-                certResult.level === 'error' ? 'error' : certResult.level === 'warn' ? 'warn' : 'info'
-              }
-              text={m}
-              className="mb-1 w-full"
-            />
-          ))}
+
+          <div className="flex flex-wrap gap-2 mb-2">
+            {certResult.clientIdMatchValid !== undefined && (
+              <Tag
+                value={`SAN Match: ${certResult.clientIdMatchValid ? 'OK' : 'Fehler'}`}
+                severity={certResult.clientIdMatchValid ? 'success' : certMode === 'strict' ? 'danger' : 'warning'}
+              />
+            )}
+            {certResult.wrprcScopeValid !== undefined && (
+              <Tag
+                value={`WRPRC Scope: ${certResult.wrprcScopeValid ? 'OK' : 'Fehler'}`}
+                severity={certResult.wrprcScopeValid ? 'success' : certMode === 'strict' ? 'danger' : 'warning'}
+              />
+            )}
+            {certResult.trustAnchorValid !== undefined && (
+              <Tag
+                value={`Trust Anchor: ${certResult.trustAnchorValid ? 'OK' : 'Unbekannt'}`}
+                severity={certResult.trustAnchorValid ? 'success' : certMode === 'strict' ? 'danger' : 'warning'}
+              />
+            )}
+            {certResult.signatureValid !== undefined && (
+              <Tag
+                value={`JWT Signatur: ${certResult.signatureValid ? 'OK' : 'Ungültig'}`}
+                severity={certResult.signatureValid ? 'success' : 'danger'}
+              />
+            )}
+          </div>
+
+          {certResult.messages.map((m, i) => {
+            const msgSev = m.startsWith('Fehler:')
+              ? 'error'
+              : m.startsWith('Warnung:')
+                ? 'warn'
+                : m.includes('erfolgreich') || m.includes('verifiziert') || m.includes('stimmt exakt')
+                  ? 'success'
+                  : 'info';
+            return (
+              <Message
+                key={i}
+                severity={msgSev}
+                text={m}
+                className="mb-1 w-full"
+              />
+            );
+          })}
           {certResult.wrpac && (
-            <div className="text-sm mt-2">
-              <div>Subject: {certResult.wrpac.subject ?? '—'}</div>
-              <div>Issuer: {certResult.wrpac.issuer ?? '—'}</div>
+            <div className="text-sm mt-2 p-2 bg-surface-100 border-round">
+              <div><strong>Subject:</strong> {certResult.wrpac.subject ?? '—'}</div>
+              <div><strong>Issuer:</strong> {certResult.wrpac.issuer ?? '—'}</div>
+              {certResult.wrpac.san && certResult.wrpac.san.length > 0 && (
+                <div><strong>SANs:</strong> {certResult.wrpac.san.join(', ')}</div>
+              )}
             </div>
           )}
         </>
