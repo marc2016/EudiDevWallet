@@ -850,3 +850,107 @@ body {
   transform: scale(1.12);
 }
 
+/* ───── Credential Detail Modal ───── */
+
+.cred-modal-header {
+  position: relative;
+  padding: 1.5rem 1.25rem 1.25rem;
+  color: #fff;
+  overflow: hidden;
+}
+
+.cred-modal-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  position: relative;
+  z-index: 1;
+}
+
+.cred-modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.cred-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.18s;
+  flex-shrink: 0;
+}
+
+.cred-modal-close:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.cred-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.cred-modal-subtitle {
+  font-size: 0.8rem;
+  opacity: 0.78;
+  margin-top: 0.25rem;
+  line-height: 1.4;
+  position: relative;
+  z-index: 1;
+}
+
+.cred-modal-body {
+  padding: 0.75rem 0;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.cred-modal-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cred-modal-table tr {
+  border-bottom: 1px solid var(--surface-border, #e5e7eb);
+}
+
+.cred-modal-table tr:last-child {
+  border-bottom: none;
+}
+
+.cred-modal-key {
+  padding: 0.6rem 1.25rem;
+  font-size: 0.8125rem;
+  color: var(--text-color-secondary);
+  white-space: nowrap;
+  width: 40%;
+  vertical-align: top;
+}
+
+.cred-modal-value {
+  padding: 0.6rem 1.25rem 0.6rem 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  word-break: break-word;
+  vertical-align: top;
+}
+
+.cred-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.75rem 1.25rem 1rem;
+  border-top: 1px solid var(--surface-border, #e5e7eb);
+}
+

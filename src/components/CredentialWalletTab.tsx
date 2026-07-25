@@ -8,8 +8,10 @@ import {
   mdiDownload,
   mdiShieldCheckOutline,
   mdiInboxOutline,
+  mdiClose,
 } from '@mdi/js';
 import { Button } from 'primereact/button';
+import { Dialog } from 'primereact/dialog';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import type { MockIdentity } from '../types/openid4vp';
 
@@ -19,7 +21,7 @@ interface CredentialWalletTabProps {
   onClearAll: () => void;
 }
 
-// Key claims to surface on each card (in priority order)
+// Key claims to surface on the card face (in priority order)
 const PREVIEW_KEYS: [string, string][] = [
   ['given_name', 'Vorname'],
   ['family_name', 'Nachname'],
@@ -37,6 +39,48 @@ const PREVIEW_KEYS: [string, string][] = [
   ['document_type', 'Dokumententyp'],
 ];
 
+// Human-readable label map for ALL claims shown in the detail modal
+const CLAIM_LABELS: Record<string, string> = {
+  given_name: 'Vorname',
+  family_name: 'Nachname',
+  birth_date: 'Geburtsdatum',
+  birth_place: 'Geburtsort',
+  address: 'Adresse',
+  nationalities: 'Nationalität',
+  email: 'E-Mail',
+  phone_number: 'Telefon',
+  gender: 'Geschlecht',
+  national_id: 'Ausweis-Nr.',
+  issuing_country: 'Ausstellungsland',
+  issuing_authority: 'Aussteller',
+  license_number: 'Führerschein-Nr.',
+  driving_privileges: 'Fahrklassen',
+  employee_id: 'Mitarbeiter-Nr.',
+  company_name: 'Unternehmen',
+  job_title: 'Position',
+  department: 'Abteilung',
+  employment_status: 'Beschäftigungsstatus',
+  issue_date: 'Ausstellungsdatum',
+  degree_name: 'Abschluss',
+  field_of_study: 'Studienfach',
+  university_name: 'Hochschule',
+  graduation_year: 'Abschlussjahr',
+  grade: 'Note',
+  eqf_level: 'EQF-Niveau',
+  organization_name: 'Organisation',
+  organization_identifier: 'Register-Nr.',
+  registration_authority: 'Registrierungsbehörde',
+  representative_name: 'Vertretungsberechtigte/r',
+  representation_role: 'Rolle',
+  vat_id: 'USt-IdNr.',
+  registered_office: 'Sitz',
+  age_over_18: 'Volljährig (18+)',
+  age_over_21: 'Über 21',
+  ageequalorover18: '≥ 18 Jahre',
+  ageequalorover21: '≥ 21 Jahre',
+  document_type: 'Dokumententyp',
+};
+
 function getCardGradient(identity: MockIdentity): string {
   if (identity.category === 'PID') {
     return 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 60%, #3b82f6 100%)';
@@ -44,7 +88,6 @@ function getCardGradient(identity: MockIdentity): string {
   if (identity.category === 'EAA Presets') {
     return 'linear-gradient(135deg, #064e3b 0%, #059669 60%, #34d399 100%)';
   }
-  // Issued via VCI
   return 'linear-gradient(135deg, #3b0764 0%, #7c3aed 60%, #a78bfa 100%)';
 }
 
@@ -75,17 +118,128 @@ function getPreviewClaims(identity: MockIdentity): { label: string; value: strin
   return results;
 }
 
-interface CredentialCardProps {
-  identity: MockIdentity;
+// ─────────────────────────────────────────────
+// Detail Modal
+// ─────────────────────────────────────────────
+
+interface CredentialDetailModalProps {
+  identity: MockIdentity | null;
+  onClose: () => void;
   onRemove: (id: string) => void;
 }
 
-function CredentialCard({ identity, onRemove }: CredentialCardProps) {
+function CredentialDetailModal({ identity, onClose, onRemove }: CredentialDetailModalProps) {
+  if (!identity) return null;
+
+  const custom = isCustom(identity);
+  const allClaims = Object.entries(identity.claims);
+
+  const handleDelete = () => {
+    confirmDialog({
+      message: `Credential „${identity.label}" wirklich löschen?`,
+      header: 'Credential löschen',
+      icon: 'pi pi-trash',
+      acceptClassName: 'p-button-danger',
+      acceptLabel: 'Löschen',
+      rejectLabel: 'Abbrechen',
+      accept: () => {
+        onRemove(identity.id);
+        onClose();
+      },
+    });
+  };
+
+  return (
+    <Dialog
+      visible
+      onHide={onClose}
+      modal
+      dismissableMask
+      closable={false}
+      showHeader={false}
+      style={{ width: 'min(90vw, 36rem)', padding: 0 }}
+      contentStyle={{ padding: 0, borderRadius: '1rem', overflow: 'hidden' }}
+      pt={{ root: { style: { borderRadius: '1rem' } } }}
+    >
+      {/* Card-style header */}
+      <div
+        className="cred-modal-header"
+        style={{ background: getCardGradient(identity) }}
+      >
+        <div className="cred-card-circle cred-card-circle--1" aria-hidden />
+        <div className="cred-card-circle cred-card-circle--2" aria-hidden />
+
+        <div className="cred-modal-header-top">
+          <div className="cred-modal-header-left">
+            <Icon
+              path={getCardIconPath(identity)}
+              size={1.4}
+              style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.35))' }}
+              aria-hidden
+            />
+            <span className="cred-card-chip">{getChipLabel(identity)}</span>
+          </div>
+          <button className="cred-modal-close" onClick={onClose} aria-label="Schließen">
+            <Icon path={mdiClose} size={0.9} aria-hidden />
+          </button>
+        </div>
+
+        <div className="cred-modal-title">{identity.label.replace(/^[^\w]+ ?/, '')}</div>
+        {identity.description && (
+          <div className="cred-modal-subtitle">{identity.description}</div>
+        )}
+      </div>
+
+      {/* Claims table */}
+      <div className="cred-modal-body">
+        <table className="cred-modal-table">
+          <tbody>
+            {allClaims.map(([key, value]) => (
+              <tr key={key}>
+                <td className="cred-modal-key">
+                  {CLAIM_LABELS[key] ?? key}
+                </td>
+                <td className="cred-modal-value">{String(value)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Footer actions */}
+      {custom && (
+        <div className="cred-modal-footer">
+          <Button
+            icon="pi pi-trash"
+            label="Credential löschen"
+            severity="danger"
+            outlined
+            size="small"
+            onClick={handleDelete}
+          />
+        </div>
+      )}
+    </Dialog>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Credential Card (tile)
+// ─────────────────────────────────────────────
+
+interface CredentialCardProps {
+  identity: MockIdentity;
+  onRemove: (id: string) => void;
+  onClick: (identity: MockIdentity) => void;
+}
+
+function CredentialCard({ identity, onRemove, onClick }: CredentialCardProps) {
   const [hovered, setHovered] = useState(false);
   const custom = isCustom(identity);
   const preview = getPreviewClaims(identity);
 
-  const handleDelete = () => {
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation(); // don't open the modal
     confirmDialog({
       message: `Credential „${identity.label}" wirklich löschen?`,
       header: 'Credential löschen',
@@ -100,9 +254,14 @@ function CredentialCard({ identity, onRemove }: CredentialCardProps) {
   return (
     <div
       className={`cred-card ${hovered ? 'cred-card--hovered' : ''}`}
-      style={{ background: getCardGradient(identity) }}
+      style={{ background: getCardGradient(identity), cursor: 'pointer' }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={() => onClick(identity)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(identity); }}
+      aria-label={`${identity.label} — Details anzeigen`}
     >
       {/* Decorative circles */}
       <div className="cred-card-circle cred-card-circle--1" aria-hidden />
@@ -155,7 +314,12 @@ function CredentialCard({ identity, onRemove }: CredentialCardProps) {
   );
 }
 
+// ─────────────────────────────────────────────
+// Wallet Tab (root)
+// ─────────────────────────────────────────────
+
 export function CredentialWalletTab({ identities, onRemove, onClearAll }: CredentialWalletTabProps) {
+  const [selectedIdentity, setSelectedIdentity] = useState<MockIdentity | null>(null);
   const custom = identities.filter(isCustom);
   const presets = identities.filter((i) => !isCustom(i));
 
@@ -174,6 +338,12 @@ export function CredentialWalletTab({ identities, onRemove, onClearAll }: Creden
   return (
     <div className="cred-wallet">
       <ConfirmDialog />
+
+      <CredentialDetailModal
+        identity={selectedIdentity}
+        onClose={() => setSelectedIdentity(null)}
+        onRemove={onRemove}
+      />
 
       {/* VCI Issued Credentials */}
       <div className="cred-wallet-section">
@@ -206,7 +376,12 @@ export function CredentialWalletTab({ identities, onRemove, onClearAll }: Creden
         ) : (
           <div className="cred-card-grid">
             {custom.map((id) => (
-              <CredentialCard key={id.id} identity={id} onRemove={onRemove} />
+              <CredentialCard
+                key={id.id}
+                identity={id}
+                onRemove={onRemove}
+                onClick={setSelectedIdentity}
+              />
             ))}
           </div>
         )}
@@ -223,7 +398,12 @@ export function CredentialWalletTab({ identities, onRemove, onClearAll }: Creden
         </div>
         <div className="cred-card-grid">
           {presets.map((id) => (
-            <CredentialCard key={id.id} identity={id} onRemove={onRemove} />
+            <CredentialCard
+              key={id.id}
+              identity={id}
+              onRemove={onRemove}
+              onClick={setSelectedIdentity}
+            />
           ))}
         </div>
       </div>
