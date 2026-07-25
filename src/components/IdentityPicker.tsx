@@ -76,7 +76,7 @@ export function IdentityPicker({
   ];
 
   return (
-    <Card title="3. Daten & Identität" className="mb-2">
+    <Card title="Daten & Identität" className="mb-2">
       <div className="flex flex-column gap-3">
         <div className="flex align-items-center gap-2">
           <label className="text-sm font-medium" style={{ minWidth: '7.5rem' }}>

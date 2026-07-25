@@ -14,7 +14,7 @@ export function RequestInput({ onAnalyze, loading, settings }: RequestInputProps
   const [value, setValue] = useState('');
 
   return (
-    <Card title="1. Anfrage" className="mb-2">
+    <Card className="mb-2">
       <p className="text-sm text-color-secondary mt-0 mb-2">
         OpenID4VP-Anfrage oder OpenID4VCI Credential Offer URI / Query-String einfügen
       </p>

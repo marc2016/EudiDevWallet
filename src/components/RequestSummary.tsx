@@ -26,7 +26,7 @@ function Row({ label, value }: { label: string; value?: string }) {
 export function RequestSummary({ request, certMode, certResult }: RequestSummaryProps) {
   if (!request) {
     return (
-      <Card title="2. Anfrage-Details" className="mb-2">
+      <Card title="Anfrage-Details" className="mb-2">
         <p className="text-color-secondary text-sm m-0">
           Noch keine Anfrage analysiert.
         </p>
@@ -35,7 +35,7 @@ export function RequestSummary({ request, certMode, certResult }: RequestSummary
   }
 
   return (
-    <Card title="2. Anfrage-Details" className="mb-2">
+    <Card title="Anfrage-Details" className="mb-2">
       <Row label="client_id" value={request.client_id} />
       <Row label="response_uri" value={request.response_uri} />
       <Row label="response_mode" value={request.response_mode} />
