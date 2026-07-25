@@ -30,18 +30,43 @@ export function IdentityPicker({
   onClaimChange,
   onToggleClaimSelection,
 }: IdentityPickerProps) {
+  const groupedIdentities = [
+    {
+      label: '🆔 Personalausweis (PID)',
+      items: mockIdentities
+        .filter((m) => !m.category || m.category === 'PID')
+        .map((m) => ({ label: m.label, value: m.id, description: m.description })),
+    },
+    {
+      label: '💳 EAA Credential Presets (Branchen-Szenarien)',
+      items: mockIdentities
+        .filter((m) => m.category === 'EAA Presets')
+        .map((m) => ({ label: m.label, value: m.id, description: m.description })),
+    },
+  ];
+
   return (
     <Card title="3. Daten & Identität" className="mb-2">
       <div className="flex flex-column gap-3">
         <div className="flex align-items-center gap-2">
           <label className="text-sm font-medium" style={{ minWidth: '7.5rem' }}>
-            Identität
+            Identität / Preset
           </label>
           <Dropdown
             value={selectedIdentityId}
-            options={mockIdentities.map((m) => ({ label: m.label, value: m.id }))}
+            options={groupedIdentities}
+            optionGroupLabel="label"
+            optionGroupChildren="items"
             onChange={(e) => onIdentityChange(e.value)}
             className="flex-1"
+            itemTemplate={(option) => (
+              <div className="flex flex-column py-1">
+                <span className="font-semibold text-sm">{option.label}</span>
+                {option.description && (
+                  <span className="text-xs text-color-secondary">{option.description}</span>
+                )}
+              </div>
+            )}
           />
         </div>
 

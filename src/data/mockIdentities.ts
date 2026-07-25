@@ -3,7 +3,9 @@ import type { MockIdentity } from '../types/openid4vp';
 export const mockIdentities: MockIdentity[] = [
   {
     id: 'max-mustermann',
-    label: 'Max Mustermann',
+    label: 'Max Mustermann (PID)',
+    category: 'PID',
+    description: 'Vollständiger Personalausweis & Führerschein',
     claims: {
       given_name: 'Max',
       family_name: 'Mustermann',
@@ -23,7 +25,9 @@ export const mockIdentities: MockIdentity[] = [
   },
   {
     id: 'anna-beispiel',
-    label: 'Anna Beispiel',
+    label: 'Anna Beispiel (PID)',
+    category: 'PID',
+    description: 'Alternative Personalausweis-Identität',
     claims: {
       given_name: 'Anna',
       family_name: 'Beispiel',
@@ -41,6 +45,73 @@ export const mockIdentities: MockIdentity[] = [
       driving_privileges: 'AM, B',
     },
   },
+  {
+    id: 'eaa-age-verification',
+    label: '🔞 Altersnachweis (Over 18 / Over 21)',
+    category: 'EAA Presets',
+    description: 'Selective Disclosure — Volljährigkeit ohne Namens-/Geburtsdatumsangabe',
+    claims: {
+      age_over_18: 'true',
+      age_over_21: 'true',
+      ageequalorover18: 'true',
+      ageequalorover21: 'true',
+      issuing_country: 'DE',
+      issuing_authority: 'EUDI Mock Trust Service',
+      document_type: 'Age Verification EAA',
+    },
+  },
+  {
+    id: 'eaa-employee-id',
+    label: '💼 Digitaler Mitarbeiterausweis (Employee ID)',
+    category: 'EAA Presets',
+    description: 'Firmenausweis mit Position, Firmenname und Mitarbeiter-ID',
+    claims: {
+      given_name: 'Max',
+      family_name: 'Mustermann',
+      employee_id: 'EMP-88492',
+      company_name: 'Acme Tech GmbH',
+      job_title: 'Senior Software Engineer',
+      department: 'Digital Identity Lab',
+      email: 'max.mustermann@acme.de',
+      employment_status: 'active',
+      issue_date: '2024-01-15',
+      issuing_authority: 'Acme Corporate Identity Service',
+    },
+  },
+  {
+    id: 'eaa-educational-credential',
+    label: '🎓 Bildungsnachweis (Educational Credential)',
+    category: 'EAA Presets',
+    description: 'Hochschulabschluss und Qualifikationsnachweis (Master of Science)',
+    claims: {
+      given_name: 'Max',
+      family_name: 'Mustermann',
+      degree_name: 'Master of Science (M. Sc.)',
+      field_of_study: 'Informatik',
+      university_name: 'Technische Universität München',
+      graduation_year: '2018',
+      grade: '1.3',
+      eqf_level: '7',
+      issuing_authority: 'TU München Prüfungsamt',
+    },
+  },
+  {
+    id: 'eaa-org-id',
+    label: '🏢 Handelsregisterauszug / Org-ID',
+    category: 'EAA Presets',
+    description: 'Vertretungsberechtigung einer Organisation/Firma',
+    claims: {
+      organization_name: 'Acme Tech GmbH',
+      organization_identifier: 'HRB 123456',
+      registration_authority: 'Amtsgericht München',
+      representative_name: 'Max Mustermann',
+      representation_role: 'Geschäftsführer',
+      vat_id: 'DE123456789',
+      registered_office: 'München',
+      issuing_authority: 'Handelsregister Bayern',
+    },
+  },
 ];
 
 export const defaultIdentity = mockIdentities[0];
+

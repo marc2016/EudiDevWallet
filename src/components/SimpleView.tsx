@@ -86,7 +86,20 @@ export function SimpleView({ flow }: SimpleViewProps) {
     changeStep('url');
   };
 
-  const identityOptions = mockIdentities.map((m) => ({ label: m.label, value: m.id }));
+  const groupedIdentities = [
+    {
+      label: '🆔 Personalausweis (PID)',
+      items: mockIdentities
+        .filter((m) => !m.category || m.category === 'PID')
+        .map((m) => ({ label: m.label, value: m.id, description: m.description })),
+    },
+    {
+      label: '💳 EAA Presets (Branchen-Szenarien)',
+      items: mockIdentities
+        .filter((m) => m.category === 'EAA Presets')
+        .map((m) => ({ label: m.label, value: m.id, description: m.description })),
+    },
+  ];
 
   const renderStepContent = (activeStep: SimpleStep) => {
     switch (activeStep) {
@@ -176,10 +189,12 @@ export function SimpleView({ flow }: SimpleViewProps) {
             <div className="simple-review-actions">
               <Dropdown
                 value={flow.selectedIdentityId}
-                options={identityOptions}
+                options={groupedIdentities}
+                optionGroupLabel="label"
+                optionGroupChildren="items"
                 onChange={(e) => flow.handleIdentityChange(e.value)}
                 className="w-full"
-                placeholder="Identität wählen"
+                placeholder="Identität / Preset wählen"
               />
               {flow.simulateOneTimeUse && (
                 <div className="flex align-items-center justify-content-between p-2 border-round text-xs font-semibold" style={{ backgroundColor: 'var(--primary-color-thin, rgba(0,0,0,0.05))', color: 'var(--primary-color)' }}>

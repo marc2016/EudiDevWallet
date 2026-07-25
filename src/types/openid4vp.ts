@@ -101,6 +101,8 @@ export interface CertificateValidationResult {
 export interface MockIdentity {
   id: string;
   label: string;
+  category?: 'PID' | 'EAA Presets';
+  description?: string;
   claims: Record<string, string>;
 }
 

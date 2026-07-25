@@ -105,12 +105,54 @@ export const CLAIM_LABELS: Record<string, string> = {
   driving_privileges: 'Führerscheinklassen',
   drivingprivileges: 'Führerscheinklassen',
   categories: 'Klassen',
-  age_over_18: 'Mindestalter 18',
-  age_over_21: 'Mindestalter 21',
+  age_over_18: 'Mindestalter 18 (Over 18)',
+  age_over_21: 'Mindestalter 21 (Over 21)',
+  ageequalorover18: 'Mindestalter 18',
+  ageequalorover21: 'Mindestalter 21',
   age: 'Alter',
   age_in_years: 'Alter in Jahren',
   portrait: 'Lichtbild',
   photo: 'Foto',
+  document_type: 'Dokumententyp',
+
+  // EAA Presets - Employee ID
+  employee_id: 'Mitarbeiter-ID',
+  employeeid: 'Mitarbeiter-ID',
+  company_name: 'Firmenname',
+  companyname: 'Firmenname',
+  job_title: 'Position / Stellenbezeichnung',
+  jobtitle: 'Position / Stellenbezeichnung',
+  department: 'Abteilung',
+  employment_status: 'Beschäftigungsstatus',
+
+  // EAA Presets - Educational Credential
+  degree_name: 'Abschlussbezeichnung',
+  degreename: 'Abschlussbezeichnung',
+  field_of_study: 'Studiengang / Fachrichtung',
+  fieldofstudy: 'Studiengang / Fachrichtung',
+  university_name: 'Hochschule / Universität',
+  universityname: 'Hochschule / Universität',
+  graduation_year: 'Abschlussjahr',
+  graduationyear: 'Abschlussjahr',
+  grade: 'Abschlussnote',
+  eqf_level: 'EQF-Niveau',
+  eqflevel: 'EQF-Niveau',
+
+  // EAA Presets - Org-ID / Handelsregister
+  organization_name: 'Organisation / Firma',
+  organizationname: 'Organisation / Firma',
+  organization_identifier: 'Handelsregisternummer / Org-ID',
+  organizationidentifier: 'Handelsregisternummer / Org-ID',
+  registration_authority: 'Registergericht',
+  registrationauthority: 'Registergericht',
+  representative_name: 'Vertretungsberechtigte Person',
+  representativename: 'Vertretungsberechtigte Person',
+  representation_role: 'Vertretungsfunktion',
+  representationrole: 'Vertretungsfunktion',
+  vat_id: 'USt-IdNr.',
+  vatid: 'USt-IdNr.',
+  registered_office: 'Sitz der Gesellschaft',
+  registeredoffice: 'Sitz der Gesellschaft',
 };
 
 /** Mock-Identität: alternative Keys auf gespeicherte Claim-Namen abbilden */
@@ -137,6 +179,31 @@ const CLAIM_MOCK_ALIASES: Record<string, string> = {
   categories: 'driving_privileges',
   vehiclecategories: 'driving_privileges',
   nationality: 'nationalities',
+
+  // EAA Aliases
+  employeeid: 'employee_id',
+  employeenumber: 'employee_id',
+  companyname: 'company_name',
+  employer: 'company_name',
+  jobtitle: 'job_title',
+  role: 'job_title',
+  degreename: 'degree_name',
+  academicdegree: 'degree_name',
+  fieldofstudy: 'field_of_study',
+  universityname: 'university_name',
+  university: 'university_name',
+  graduationyear: 'graduation_year',
+  organizationname: 'organization_name',
+  company: 'organization_name',
+  organizationidentifier: 'organization_identifier',
+  orgid: 'organization_identifier',
+  registrationauthority: 'registration_authority',
+  registercourt: 'registration_authority',
+  representativename: 'representative_name',
+  representationrole: 'representation_role',
+  vatid: 'vat_id',
+  ustid: 'vat_id',
+  registeredoffice: 'registered_office',
 };
 
 export function claimLabel(key: string): string {
@@ -252,6 +319,57 @@ export function mockClaimValue(identityClaims: Record<string, string>, key: stri
   }
   if (normKey === 'countryname' || normKey === 'issuingcountryname') {
     return 'Deutschland';
+  }
+  if (normKey === 'employeeid' || normKey === 'employeenumber') {
+    return 'EMP-88492';
+  }
+  if (normKey === 'companyname' || normKey === 'employer') {
+    return 'Acme Tech GmbH';
+  }
+  if (normKey === 'jobtitle' || normKey === 'role' || normKey === 'position') {
+    return 'Senior Software Engineer';
+  }
+  if (normKey === 'department' || normKey === 'dept') {
+    return 'Digital Identity Lab';
+  }
+  if (normKey === 'degreename' || normKey === 'degree') {
+    return isMax ? 'Master of Science (M. Sc.)' : 'Dr. rer. nat.';
+  }
+  if (normKey === 'fieldofstudy' || normKey === 'studyprogram' || normKey === 'major') {
+    return 'Informatik';
+  }
+  if (normKey === 'universityname' || normKey === 'university') {
+    return 'Technische Universität München';
+  }
+  if (normKey === 'graduationyear') {
+    return '2018';
+  }
+  if (normKey === 'grade' || normKey === 'finalgrade') {
+    return '1.3';
+  }
+  if (normKey === 'eqflevel') {
+    return '7';
+  }
+  if (normKey === 'organizationname' || normKey === 'orgname') {
+    return 'Acme Tech GmbH';
+  }
+  if (normKey === 'organizationidentifier' || normKey === 'orgid' || normKey === 'companynumber') {
+    return 'HRB 123456';
+  }
+  if (normKey === 'registrationauthority' || normKey === 'registercourt') {
+    return 'Amtsgericht München';
+  }
+  if (normKey === 'representativename' || normKey === 'representative') {
+    return isMax ? 'Max Mustermann' : 'Anna Beispiel';
+  }
+  if (normKey === 'representationrole' || normKey === 'authorityrole') {
+    return 'Geschäftsführer';
+  }
+  if (normKey === 'vatid' || normKey === 'ustid') {
+    return 'DE123456789';
+  }
+  if (normKey === 'registeredoffice') {
+    return 'München';
   }
 
   // 5. Check age conditions
