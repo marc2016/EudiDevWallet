@@ -2,10 +2,6 @@ import { Dropdown } from 'primereact/dropdown';
 import { Checkbox } from 'primereact/checkbox';
 import { InputText } from 'primereact/inputtext';
 import {
-  CERTIFICATE_MODE_OPTIONS,
-  CREDENTIAL_FORMAT_OPTIONS,
-  RESPONSE_MODE_OPTIONS,
-  TRUST_ANCHOR_MODE_OPTIONS,
   saveCertificateMode,
   saveCredentialFormat,
   saveCustomTrustAnchors,
@@ -14,6 +10,7 @@ import {
   saveTrustAnchorMode,
 } from '../settings/walletSettings';
 import type { CertificateMode, CredentialFormatSetting, ResponseMode, TrustAnchorMode } from '../types/openid4vp';
+import { useTranslation } from '../i18n/LanguageContext';
 
 export interface WalletSettingsProps {
   certificateMode: CertificateMode;
@@ -44,18 +41,40 @@ export function WalletSettings({
   onCredentialFormatChange,
   onSimulateOneTimeUseChange,
 }: WalletSettingsProps) {
-  const certOptions = CERTIFICATE_MODE_OPTIONS.map((o) => ({
-    label: o.label,
-    value: o.value,
-    disabled: 'disabled' in o ? o.disabled : false,
-  }));
+  const { t } = useTranslation();
+
+  const certOptions = [
+    { label: t('settings.cert.off'), value: 'off' },
+    { label: t('settings.cert.display'), value: 'display' },
+    { label: t('settings.cert.soft'), value: 'soft' },
+    { label: t('settings.cert.strict'), value: 'strict' },
+  ];
+
+  const trustAnchorOptions = [
+    { label: t('settings.trust.eudi_ca'), value: 'eudi_ca' },
+    { label: t('settings.trust.custom'), value: 'custom' },
+    { label: t('settings.trust.mock'), value: 'mock' },
+  ];
+
+  const responseModeOptions = [
+    { label: t('settings.transport.auto'), value: 'auto' },
+    { label: t('settings.transport.direct_post'), value: 'direct_post' },
+    { label: t('settings.transport.direct_post_jwt'), value: 'direct_post_jwt' },
+    { label: t('settings.transport.raw_json'), value: 'raw_json' },
+  ];
+
+  const formatOptions = [
+    { label: t('settings.format.auto'), value: 'auto' },
+    { label: t('settings.format.dc_sd_jwt'), value: 'dc_sd_jwt' },
+    { label: t('settings.format.mso_mdoc'), value: 'mso_mdoc' },
+  ];
 
   return (
     <div className="flex flex-column gap-3 w-full">
       <div className="wallet-settings-row">
         <div className="wallet-settings-group">
           <label className="text-sm font-medium text-color-secondary" htmlFor="cert-mode">
-            Zertifikatsmodus
+            {t('settings.certificateMode')}
           </label>
           <Dropdown
             inputId="cert-mode"
@@ -63,7 +82,6 @@ export function WalletSettings({
             options={certOptions}
             optionLabel="label"
             optionValue="value"
-            optionDisabled="disabled"
             onChange={(e) => {
               if (e.value) {
                 saveCertificateMode(e.value);
@@ -75,12 +93,12 @@ export function WalletSettings({
         </div>
         <div className="wallet-settings-group">
           <label className="text-sm font-medium text-color-secondary" htmlFor="trust-anchor-mode">
-            Trust Anchor
+            {t('settings.trustAnchor')}
           </label>
           <Dropdown
             inputId="trust-anchor-mode"
             value={trustAnchorMode}
-            options={TRUST_ANCHOR_MODE_OPTIONS}
+            options={trustAnchorOptions}
             optionLabel="label"
             optionValue="value"
             onChange={(e) => {
@@ -94,12 +112,12 @@ export function WalletSettings({
         </div>
         <div className="wallet-settings-group">
           <label className="text-sm font-medium text-color-secondary" htmlFor="response-mode">
-            Transport
+            {t('settings.transport')}
           </label>
           <Dropdown
             inputId="response-mode"
             value={responseMode}
-            options={RESPONSE_MODE_OPTIONS}
+            options={responseModeOptions}
             optionLabel="label"
             optionValue="value"
             onChange={(e) => {
@@ -113,12 +131,12 @@ export function WalletSettings({
         </div>
         <div className="wallet-settings-group">
           <label className="text-sm font-medium text-color-secondary" htmlFor="credential-format">
-            Credential-Format
+            {t('settings.credentialFormat')}
           </label>
           <Dropdown
             inputId="credential-format"
             value={credentialFormat}
-            options={CREDENTIAL_FORMAT_OPTIONS}
+            options={formatOptions}
             optionLabel="label"
             optionValue="value"
             onChange={(e) => {
@@ -135,12 +153,12 @@ export function WalletSettings({
       {trustAnchorMode === 'custom' && (
         <div className="wallet-settings-group w-full px-1">
           <label className="text-sm font-medium text-color-secondary" htmlFor="custom-trust-anchors">
-            Benutzerdefinierte Trust Anchors / CAs (kommagetrennt)
+            {t('settings.customTrustAnchorsLabel')}
           </label>
           <InputText
             id="custom-trust-anchors"
             value={customTrustAnchors}
-            placeholder="z. B. Relying Party Registrar, My Test Root CA"
+            placeholder={t('settings.customTrustAnchorsPlaceholder')}
             onChange={(e) => {
               const val = e.target.value;
               saveCustomTrustAnchors(val);
@@ -162,7 +180,7 @@ export function WalletSettings({
           }}
         />
         <label htmlFor="simulate-otu" className="text-sm font-medium select-none cursor-pointer text-color-secondary">
-          Einmalnutzung simulieren (One-Time-Use)
+          {t('settings.simulateOneTimeUse')}
         </label>
       </div>
     </div>

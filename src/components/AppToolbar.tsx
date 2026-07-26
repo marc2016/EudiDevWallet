@@ -1,15 +1,6 @@
 import { SelectButton } from 'primereact/selectbutton';
 import type { ColorScheme, ViewMode } from '../settings/walletSettings';
-
-const VIEW_OPTIONS = [
-  { label: 'Einfach', value: 'simple' as ViewMode },
-  { label: 'Debug', value: 'debug' as ViewMode },
-];
-
-const THEME_OPTIONS = [
-  { label: 'Light', value: 'light' as ColorScheme, icon: 'pi pi-sun' },
-  { label: 'Dark', value: 'dark' as ColorScheme, icon: 'pi pi-moon' },
-];
+import { useTranslation, type Language } from '../i18n/LanguageContext';
 
 interface AppToolbarProps {
   viewMode: ViewMode;
@@ -24,6 +15,23 @@ export function AppToolbar({
   onViewModeChange,
   onColorSchemeChange,
 }: AppToolbarProps) {
+  const { language, setLanguage, t } = useTranslation();
+
+  const VIEW_OPTIONS = [
+    { label: t('toolbar.simple'), value: 'simple' as ViewMode },
+    { label: t('toolbar.debug'), value: 'debug' as ViewMode },
+  ];
+
+  const THEME_OPTIONS = [
+    { label: t('toolbar.light'), value: 'light' as ColorScheme, icon: 'pi pi-sun' },
+    { label: t('toolbar.dark'), value: 'dark' as ColorScheme, icon: 'pi pi-moon' },
+  ];
+
+  const LANG_OPTIONS = [
+    { label: 'DE', value: 'de' as Language },
+    { label: 'EN', value: 'en' as Language },
+  ];
+
   return (
     <div className="app-toolbar flex items-center gap-2">
       <SelectButton
@@ -47,6 +55,15 @@ export function AppToolbar({
         )}
         allowEmpty={false}
         className="app-toolbar-select app-toolbar-theme"
+      />
+      <SelectButton
+        value={language}
+        options={LANG_OPTIONS}
+        onChange={(e) => {
+          if (e.value) setLanguage(e.value);
+        }}
+        allowEmpty={false}
+        className="app-toolbar-select app-toolbar-lang"
       />
     </div>
   );

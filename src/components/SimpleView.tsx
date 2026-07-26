@@ -10,6 +10,7 @@ import { ProgressSpinner } from 'primereact/progressspinner';
 import { SelectiveDisclosureModal } from './SelectiveDisclosureModal';
 import { CredentialWalletTab } from './CredentialWalletTab';
 import type { useWalletFlow } from '../hooks/useWalletFlow';
+import { useTranslation } from '../i18n/LanguageContext';
 
 type WalletFlow = ReturnType<typeof useWalletFlow>;
 
@@ -48,6 +49,7 @@ function initialStep(flow: WalletFlow): SimpleStep {
 }
 
 export function SimpleView({ flow }: SimpleViewProps) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<SimpleStep>(() => initialStep(flow));
   const [leavingStep, setLeavingStep] = useState<SimpleStep | null>(null);
   const [url, setUrl] = useState('');
@@ -159,7 +161,7 @@ export function SimpleView({ flow }: SimpleViewProps) {
             <InputText
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="openid4vp://… oder openid-credential-offer://…"
+              placeholder={t('simple.urlPlaceholder')}
               className="flex-1"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && url.trim()) void handleAnalyze();
@@ -175,14 +177,14 @@ export function SimpleView({ flow }: SimpleViewProps) {
                   console.error('Failed to read clipboard: ', err);
                 }
               }}
-              aria-label="Aus Zwischenablage einfügen"
+              aria-label={t('simple.pasteFromClipboard')}
               severity="secondary"
             />
             <Button
               icon="pi pi-arrow-right"
               onClick={() => void handleAnalyze()}
               disabled={!url.trim()}
-              aria-label="Analysieren"
+              aria-label={t('simple.analyze')}
             />
           </div>
         );
@@ -192,7 +194,7 @@ export function SimpleView({ flow }: SimpleViewProps) {
         return (
           <div className="simple-status">
             <ProgressSpinner style={{ width: '2rem', height: '2rem' }} strokeWidth="4" />
-            <span>Processing…</span>
+            <span>{t('simple.processing')}</span>
           </div>
         );
 
@@ -200,7 +202,7 @@ export function SimpleView({ flow }: SimpleViewProps) {
         return (
           <div className="simple-status simple-status--success">
             <SuccessIcon />
-            <span>Completed</span>
+            <span>{t('simple.completed')}</span>
           </div>
         );
 
@@ -480,7 +482,7 @@ export function SimpleView({ flow }: SimpleViewProps) {
           role="tab"
         >
           <i className="pi pi-link" />
-          Anfrage
+          {t('tab.request')}
         </button>
         <button
           id="tab-wallet"
@@ -490,7 +492,7 @@ export function SimpleView({ flow }: SimpleViewProps) {
           role="tab"
         >
           <i className="pi pi-wallet" />
-          Mein Wallet
+          {t('tab.wallet')}
           {flow.identities.filter((i) => i.category !== 'PID' && i.category !== 'EAA Presets').length > 0 && (
             <span className="simple-tab-badge">
               {flow.identities.filter((i) => i.category !== 'PID' && i.category !== 'EAA Presets').length}

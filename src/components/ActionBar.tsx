@@ -1,5 +1,6 @@
 import { Button } from 'primereact/button';
 import { Message } from 'primereact/message';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface ActionBarProps {
   onApprove: () => void;
@@ -16,6 +17,8 @@ export function ActionBar({
   disabled,
   lastResult,
 }: ActionBarProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="action-bar surface-section border-top-1 surface-border p-3 mt-2">
       {lastResult?.ok ? (
@@ -27,7 +30,7 @@ export function ActionBar({
       <div className="flex gap-2">
         {onPreview && (
           <Button
-            label="Freigabe-Vorschau"
+            label={t('action.disclosurePreview')}
             icon="pi pi-eye"
             severity="info"
             onClick={onPreview}
@@ -36,7 +39,7 @@ export function ActionBar({
           />
         )}
         <Button
-          label="Freigeben"
+          label={t('action.share')}
           icon="pi pi-check"
           severity="success"
           onClick={onApprove}

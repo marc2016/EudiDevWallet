@@ -3,6 +3,7 @@ import { AppToolbar } from './components/AppToolbar';
 import { DebugView } from './components/DebugView';
 import { SimpleView } from './components/SimpleView';
 import { ActivityLogProvider } from './log/ActivityLogContext';
+import { LanguageProvider } from './i18n/LanguageContext';
 import { useWalletFlow } from './hooks/useWalletFlow';
 import { applyColorScheme } from './settings/applyColorScheme';
 import {
@@ -46,8 +47,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <ActivityLogProvider>
-      <AppContent />
-    </ActivityLogProvider>
+    <LanguageProvider>
+      <ActivityLogProvider>
+        <AppContent />
+      </ActivityLogProvider>
+    </LanguageProvider>
   );
 }

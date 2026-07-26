@@ -7,6 +7,7 @@ import { useActivityLog } from '../log/ActivityLogContext';
 import { formatLogDetails, formatLogTime } from '../log/activityLog';
 import { loadClearLogOnRequest, saveClearLogOnRequest } from '../settings/walletSettings';
 import type { ActivityLogEntry, LogLevel } from '../types/openid4vp';
+import { useTranslation } from '../i18n/LanguageContext';
 
 function getEffectiveLevel(entry: ActivityLogEntry): LogLevel {
   if (entry.level === 'error' || entry.level === 'warn') {
@@ -101,6 +102,7 @@ function TimelineItem({ entry }: { entry: ActivityLogEntry }) {
 }
 
 export function ActivityLogPanel() {
+  const { t } = useTranslation();
   const { entries, clear } = useActivityLog();
   const bottomRef = useRef<HTMLDivElement>(null);
   const [clearOnRequest, setClearOnRequest] = useState<boolean>(loadClearLogOnRequest);
@@ -131,10 +133,10 @@ export function ActivityLogPanel() {
   return (
     <div className="log-panel">
       <div className="log-panel-header">
-        <h2 className="log-panel-title">Aktivitäts-Protokoll</h2>
+        <h2 className="log-panel-title">{t('log.title')}</h2>
         <div className="flex flex-wrap gap-2">
-          <Button icon="pi pi-trash" severity="secondary" size="small" onClick={clear} />
-          <Button icon="pi pi-download" severity="secondary" size="small" onClick={exportJson} />
+          <Button icon="pi pi-trash" severity="secondary" size="small" onClick={clear} title={t('log.clear')} />
+          <Button icon="pi pi-download" severity="secondary" size="small" onClick={exportJson} title={t('log.export')} />
           <Button icon="pi pi-copy" severity="secondary" size="small" onClick={copyLog} />
         </div>
       </div>
@@ -146,13 +148,13 @@ export function ActivityLogPanel() {
           checked={clearOnRequest}
         />
         <label htmlFor="clear-on-request" className="text-sm font-medium select-none cursor-pointer text-color-secondary">
-          Protokoll bei neuer Anfrage löschen
+          {t('log.clearOnRequest')}
         </label>
       </div>
 
       <div className="log-panel-content">
         {entries.length === 0 ? (
-          <p className="text-color-secondary text-sm m-0">Noch keine Einträge.</p>
+          <p className="text-color-secondary text-sm m-0">{t('log.empty')}</p>
         ) : (
           <Timeline
             value={entries}

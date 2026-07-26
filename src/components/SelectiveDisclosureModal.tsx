@@ -5,6 +5,7 @@ import { Tag } from 'primereact/tag';
 import { Message } from 'primereact/message';
 import { Divider } from 'primereact/divider';
 import type { AuthorizationRequest, CertificateValidationResult, ExtractedClaim } from '../types/openid4vp';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface SelectiveDisclosureModalProps {
   visible: boolean;
@@ -35,6 +36,7 @@ export function SelectiveDisclosureModal({
   onSelectAllClaims,
   onDeselectOptionalClaims,
 }: SelectiveDisclosureModalProps) {
+  const { t } = useTranslation();
   const essentialClaims = claims.filter((c) => c.essential);
   const optionalClaims = claims.filter((c) => !c.essential);
 
@@ -48,22 +50,25 @@ export function SelectiveDisclosureModal({
       <div className="text-xs text-color-secondary">
         {totalOmitted > 0 ? (
           <span className="font-semibold text-primary">
-            🛡️ Selective Disclosure: {totalOmitted} {totalOmitted === 1 ? 'Attribut' : 'Attribute'} zurückgehalten
+            {t('disclosure.retained', {
+              count: totalOmitted,
+              unit: totalOmitted === 1 ? t('disclosure.unitAttribute') : t('disclosure.unitAttributes'),
+            })}
           </span>
         ) : (
-          <span>Vollständige Offenlegung ({totalDisclosed} Attribute)</span>
+          <span>{t('disclosure.fullDisclosure', { count: totalDisclosed })}</span>
         )}
       </div>
       <div className="flex gap-2">
         <Button
-          label="Abbrechen"
+          label={t('disclosure.cancel')}
           icon="pi pi-times"
           severity="secondary"
           onClick={onHide}
           disabled={submitting}
         />
         <Button
-          label="Daten jetzt freigeben"
+          label={t('disclosure.approve')}
           icon="pi pi-check"
           severity="success"
           onClick={onApprove}
@@ -78,7 +83,7 @@ export function SelectiveDisclosureModal({
       header={
         <div className="flex align-items-center gap-2">
           <i className="pi pi-eye text-primary text-xl" />
-          <span className="font-semibold">Selective Disclosure & Freigabe-Vorschau</span>
+          <span className="font-semibold">{t('disclosure.title')}</span>
         </div>
       }
       visible={visible}
@@ -93,7 +98,7 @@ export function SelectiveDisclosureModal({
         {/* Verifier Header Card */}
         <div className="p-3 surface-100 border-round border-1 surface-border">
           <div className="flex align-items-center justify-content-between mb-1">
-            <span className="text-xs font-semibold text-color-secondary uppercase">Empfänger (Verifier)</span>
+            <span className="text-xs font-semibold text-color-secondary uppercase">{t('disclosure.verifier')}</span>
             {certResult && (
               <Tag
                 value={certResult.level === 'success' ? 'Zertifikat Gültig' : certResult.level === 'warn' ? 'Zertifikat Warnung' : 'Zertifikat Nicht Verifiziert'}
@@ -114,10 +119,10 @@ export function SelectiveDisclosureModal({
 
         {/* Quick Toggles */}
         <div className="flex align-items-center justify-content-between gap-2 py-1">
-          <span className="text-xs font-semibold text-color-secondary">Attribute filtern:</span>
+          <span className="text-xs font-semibold text-color-secondary">{t('disclosure.filterAttributes')}</span>
           <div className="flex gap-2">
             <Button
-              label="Alle optionalen abwählen"
+              label={t('disclosure.deselectOptional')}
               icon="pi pi-filter-slash"
               size="small"
               severity="secondary"
@@ -127,7 +132,7 @@ export function SelectiveDisclosureModal({
               onClick={onDeselectOptionalClaims}
             />
             <Button
-              label="Alle auswählen"
+              label={t('disclosure.selectAll')}
               icon="pi pi-check-square"
               size="small"
               severity="secondary"
@@ -139,12 +144,12 @@ export function SelectiveDisclosureModal({
           </div>
         </div>
 
-        {/* Warning if essential claim deselected */}
+        {/* Essential Warning Banner if deselected */}
         {deselectedEssential && (
           <Message
             severity="warn"
-            text="Achtung: Mindestens ein Pflichtattribut ist abgewählt. Der Verifier wird die Präsentation voraussichtlich ablehnen."
-            className="w-full"
+            text="Hinweis: Du hast ein als essenziell markiertes Attribut abgewählt. Der Verifier könnte die Anfrage ablehnen."
+            className="w-full justify-content-start text-xs"
           />
         )}
 
@@ -152,7 +157,7 @@ export function SelectiveDisclosureModal({
         {essentialClaims.length > 0 && (
           <div>
             <div className="flex align-items-center gap-2 mb-2">
-              <Tag value="Pflichtattribute (essential: true)" severity="danger" />
+              <Tag value="Essenziell (Erforderlich)" severity="warning" />
               <span className="text-xs text-color-secondary">
                 ({essentialClaims.filter((c) => selectedClaims[c.key] !== false).length}/{essentialClaims.length} ausgewählt)
               </span>
@@ -165,7 +170,6 @@ export function SelectiveDisclosureModal({
                   <div
                     key={c.key}
                     className="flex align-items-center justify-content-between p-2 border-round hover:surface-100 transition-colors transition-duration-150"
-                    style={{ opacity: isSelected ? 1 : 0.6 }}
                   >
                     <div className="flex align-items-center gap-3">
                       <Checkbox
@@ -174,7 +178,7 @@ export function SelectiveDisclosureModal({
                         id={`modal-essential-${c.key}`}
                       />
                       <label htmlFor={`modal-essential-${c.key}`} className="cursor-pointer">
-                        <div className={`text-sm font-semibold ${!isSelected ? 'line-through' : ''}`}>
+                        <div className={`text-sm font-semibold ${!isSelected ? 'line-through text-color-secondary' : ''}`}>
                           {c.label}
                         </div>
                         <div className="text-xs text-color-secondary font-mono">{c.key}</div>
@@ -183,7 +187,7 @@ export function SelectiveDisclosureModal({
                     <div className="text-right">
                       <span className="text-sm font-medium">{value}</span>
                       {!isSelected && (
-                        <div className="text-xs text-red-500 font-semibold">Abgewählt</div>
+                        <div className="text-xs text-red-500 font-semibold">{t('disclosure.deselected')}</div>
                       )}
                     </div>
                   </div>
@@ -228,9 +232,9 @@ export function SelectiveDisclosureModal({
                     <div className="text-right">
                       <span className="text-sm font-medium">{value}</span>
                       {!isSelected ? (
-                        <div className="text-xs text-orange-500 font-semibold">Unterdrückt</div>
+                        <div className="text-xs text-orange-500 font-semibold">{t('disclosure.suppressed')}</div>
                       ) : (
-                        <div className="text-xs text-green-500 font-semibold">Wird übertragen</div>
+                        <div className="text-xs text-green-500 font-semibold">{t('disclosure.transmitted')}</div>
                       )}
                     </div>
                   </div>
@@ -245,22 +249,22 @@ export function SelectiveDisclosureModal({
         {/* Disclosure Impact Summary Card */}
         <div className="p-3 surface-200 border-round text-xs flex flex-column gap-1">
           <div className="font-semibold text-sm mb-1 flex align-items-center justify-content-between">
-            <span>Offenlegungs-Zusammenfassung</span>
+            <span>{t('disclosure.summary')}</span>
             <Tag
               value={totalOmitted > 0 ? 'Selective Disclosure Aktiv' : 'Vollständig'}
               severity={totalOmitted > 0 ? 'success' : 'secondary'}
             />
           </div>
           <div className="flex justify-content-between">
-            <span className="text-color-secondary">Angefragte Attribute gesamt:</span>
+            <span className="text-color-secondary">{t('disclosure.totalRequested')}</span>
             <span className="font-semibold">{claims.length}</span>
           </div>
           <div className="flex justify-content-between">
-            <span className="text-color-secondary">Freigegebene Attribute:</span>
+            <span className="text-color-secondary">{t('disclosure.totalDisclosed')}</span>
             <span className="font-semibold text-green-600">{totalDisclosed}</span>
           </div>
           <div className="flex justify-content-between">
-            <span className="text-color-secondary">Unterdrückte Attribute (Selective Disclosure):</span>
+            <span className="text-color-secondary">{t('disclosure.totalOmitted')}</span>
             <span className="font-semibold text-primary">{totalOmitted}</span>
           </div>
         </div>

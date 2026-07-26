@@ -8,6 +8,7 @@ import { ActivityLogPanel } from './ActivityLogPanel';
 import { SelectiveDisclosureModal } from './SelectiveDisclosureModal';
 import { CredentialWalletTab } from './CredentialWalletTab';
 import type { useWalletFlow } from '../hooks/useWalletFlow';
+import { useTranslation } from '../i18n/LanguageContext';
 
 type WalletFlow = ReturnType<typeof useWalletFlow>;
 
@@ -16,6 +17,7 @@ interface DebugViewProps {
 }
 
 export function DebugView({ flow }: DebugViewProps) {
+  const { t } = useTranslation();
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'request' | 'wallet'>('request');
 
@@ -45,7 +47,7 @@ export function DebugView({ flow }: DebugViewProps) {
                 role="tab"
               >
                 <i className="pi pi-link" />
-                Anfrage
+                {t('tab.request')}
               </button>
               <button
                 id="debug-tab-wallet"
@@ -55,7 +57,7 @@ export function DebugView({ flow }: DebugViewProps) {
                 role="tab"
               >
                 <i className="pi pi-wallet" />
-                Mein Wallet
+                {t('tab.wallet')}
                 {flow.identities.filter((i) => i.category !== 'PID' && i.category !== 'EAA Presets').length > 0 && (
                   <span className="simple-tab-badge">
                     {flow.identities.filter((i) => i.category !== 'PID' && i.category !== 'EAA Presets').length}

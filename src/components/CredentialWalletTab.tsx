@@ -14,6 +14,7 @@ import { Button } from 'primereact/button';
 import { Dialog } from 'primereact/dialog';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import type { MockIdentity } from '../types/openid4vp';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface CredentialWalletTabProps {
   identities: MockIdentity[];
@@ -280,6 +281,7 @@ interface CredentialCardProps {
 }
 
 function CredentialCard({ identity, onRemove, onClick }: CredentialCardProps) {
+  const { t } = useTranslation();
   const [hovered, setHovered] = useState(false);
   const custom = isCustom(identity);
   const preview = getPreviewClaims(identity);
@@ -287,12 +289,12 @@ function CredentialCard({ identity, onRemove, onClick }: CredentialCardProps) {
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation(); // don't open the modal
     confirmDialog({
-      message: `Credential „${identity.label}" wirklich löschen?`,
-      header: 'Credential löschen',
+      message: t('wallet.deleteConfirmMsg', { title: identity.label }),
+      header: t('wallet.deleteConfirmTitle'),
       icon: 'pi pi-trash',
       acceptClassName: 'p-button-danger',
-      acceptLabel: 'Löschen',
-      rejectLabel: 'Abbrechen',
+      acceptLabel: t('wallet.delete'),
+      rejectLabel: t('wallet.cancel'),
       accept: () => onRemove(identity.id),
     });
   };
@@ -313,7 +315,7 @@ function CredentialCard({ identity, onRemove, onClick }: CredentialCardProps) {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(identity); }}
-      aria-label={`${identity.label} — Details anzeigen`}
+      aria-label={`${identity.label} — ${t('wallet.showDetails')}`}
     >
       {/* Background Image Layer */}
       {identity.display?.backgroundImageUrl ? (
@@ -390,7 +392,7 @@ function CredentialCard({ identity, onRemove, onClick }: CredentialCardProps) {
           <button
             className="cred-card-delete"
             onClick={handleDelete}
-            title="Credential löschen"
+            title={t('wallet.deleteConfirmTitle')}
             aria-label={`${identity.label} löschen`}
           >
             <Icon path={mdiDelete} size={0.75} aria-hidden />
@@ -406,18 +408,19 @@ function CredentialCard({ identity, onRemove, onClick }: CredentialCardProps) {
 // ─────────────────────────────────────────────
 
 export function CredentialWalletTab({ identities, onRemove, onClearAll }: CredentialWalletTabProps) {
+  const { t } = useTranslation();
   const [selectedIdentity, setSelectedIdentity] = useState<MockIdentity | null>(null);
   const custom = identities.filter(isCustom);
   const presets = identities.filter((i) => !isCustom(i));
 
   const handleClearAll = () => {
     confirmDialog({
-      message: `Alle ${custom.length} ausgestellten Credentials wirklich löschen?`,
-      header: 'Alle löschen',
+      message: t('wallet.deleteAllConfirmMsg', { count: custom.length }),
+      header: t('wallet.deleteAllConfirmTitle'),
       icon: 'pi pi-exclamation-triangle',
       acceptClassName: 'p-button-danger',
-      acceptLabel: 'Alle löschen',
-      rejectLabel: 'Abbrechen',
+      acceptLabel: t('wallet.deleteAll'),
+      rejectLabel: t('wallet.cancel'),
       accept: onClearAll,
     });
   };
@@ -437,12 +440,12 @@ export function CredentialWalletTab({ identities, onRemove, onClearAll }: Creden
         <div className="cred-wallet-section-header">
           <h2 className="cred-wallet-section-title">
             <Icon path={mdiDownload} size={0.85} aria-hidden />
-            Ausgestellte Credentials
+            {t('wallet.issuedCredentials')}
           </h2>
           {custom.length > 0 && (
             <Button
               icon="pi pi-trash"
-              label="Alle löschen"
+              label={t('wallet.deleteAll')}
               size="small"
               severity="danger"
               outlined
@@ -455,9 +458,9 @@ export function CredentialWalletTab({ identities, onRemove, onClearAll }: Creden
         {custom.length === 0 ? (
           <div className="cred-wallet-empty">
             <Icon path={mdiInboxOutline} size={2} style={{ opacity: 0.35 }} aria-hidden />
-            <p>Noch keine Credentials via OpenID4VCI ausgestellt.</p>
+            <p>{t('wallet.noIssuedCards')}</p>
             <p className="cred-wallet-empty-hint">
-              Scanne einen Credential-Offer-Link im Tab <strong>Anfrage</strong>, um Credentials zu empfangen.
+              {t('wallet.noIssuedCardsHint')}
             </p>
           </div>
         ) : (
@@ -479,7 +482,7 @@ export function CredentialWalletTab({ identities, onRemove, onClearAll }: Creden
         <div className="cred-wallet-section-header">
           <h2 className="cred-wallet-section-title">
             <Icon path={mdiShieldCheckOutline} size={0.85} aria-hidden />
-            Eingebaute Presets
+            {t('wallet.builtinPresets')}
           </h2>
           <span className="cred-wallet-badge">{presets.length}</span>
         </div>

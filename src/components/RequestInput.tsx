@@ -3,6 +3,7 @@ import { Card } from 'primereact/card';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Button } from 'primereact/button';
 import { WalletSettings, type WalletSettingsProps } from './WalletSettings';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface RequestInputProps {
   onAnalyze: (url: string) => void;
@@ -11,12 +12,13 @@ interface RequestInputProps {
 }
 
 export function RequestInput({ onAnalyze, loading, settings }: RequestInputProps) {
+  const { t } = useTranslation();
   const [value, setValue] = useState('');
 
   return (
     <Card className="mb-2">
       <p className="text-sm text-color-secondary mt-0 mb-2">
-        OpenID4VP-Anfrage oder OpenID4VCI Credential Offer URI / Query-String einfügen
+        {t('requestInput.instruction')}
       </p>
       <InputTextarea
         value={value}
@@ -24,18 +26,18 @@ export function RequestInput({ onAnalyze, loading, settings }: RequestInputProps
         rows={4}
         autoResize
         className="w-full font-mono text-sm"
-        placeholder="openid4vp://?client_id=… oder openid-credential-offer://…"
+        placeholder={t('requestInput.placeholder')}
       />
       <div className="mt-2 flex gap-2">
         <Button
-          label="Analysieren"
+          label={t('requestInput.analyze')}
           icon="pi pi-search"
           onClick={() => onAnalyze(value)}
           loading={loading}
           disabled={!value.trim()}
         />
         <Button
-          label="Einfügen"
+          label={t('requestInput.paste')}
           icon="pi pi-file-import"
           onClick={async () => {
             try {
