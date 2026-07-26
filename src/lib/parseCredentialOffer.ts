@@ -1,5 +1,6 @@
 import { ISSUANCE_PRESETS } from '../data/issuancePresets';
 import type { CredentialOffer } from '../types/openid4vci';
+import type { CredentialDisplayMetadata } from '../types/openid4vp';
 
 export function isCredentialOfferInput(input: string): boolean {
   if (!input) return false;
@@ -146,11 +147,120 @@ export function parseCredentialOffer(input: string): CredentialOffer {
   };
 }
 
+export async function fetchIssuerCredentialMetadata(
+  credentialIssuer: string,
+  configIds: string[],
+  log?: (level: 'info' | 'warn' | 'error' | 'success', category: any, message: string, details?: unknown) => void
+): Promise<CredentialDisplayMetadata | undefined> {
+  if (!credentialIssuer.startsWith('http')) return undefined;
+
+  const candidateUrls: string[] = [];
+
+  try {
+    const url = new URL(credentialIssuer);
+    if (url.pathname && url.pathname !== '/') {
+      candidateUrls.push(`${url.origin}/.well-known/openid-credential-issuer${url.pathname.replace(/\/+$/, '')}`);
+    }
+  } catch {
+    // ignore
+  }
+
+  const cleanIssuer = credentialIssuer.replace(/\/+$/, '');
+  candidateUrls.push(`${cleanIssuer}/.well-known/openid-credential-issuer`);
+  candidateUrls.push(`${cleanIssuer}/.well-known/openid-configuration`);
+
+  if (cleanIssuer.endsWith('/vci')) {
+    const parent = cleanIssuer.replace(/\/vci$/, '');
+    candidateUrls.push(`${parent}/.well-known/openid-credential-issuer`);
+  }
+
+  for (const metadataUrl of candidateUrls) {
+    try {
+      const res = await fetch(metadataUrl);
+      if (res.ok) {
+        const data = await res.json();
+        const display = extractDisplayFromMetadata(data, configIds);
+        if (display) {
+          log?.('success', 'o4vci', `OpenID Issuer Metadata (Bilder & Design) von ${metadataUrl} geladen`, {
+            name: display.name,
+            logoUrl: display.logoUrl,
+            backgroundImageUrl: display.backgroundImageUrl,
+            backgroundColor: display.backgroundColor,
+          });
+          return display;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return undefined;
+}
+
+function extractDisplayFromMetadata(
+  metadata: unknown,
+  configIds: string[]
+): CredentialDisplayMetadata | undefined {
+  if (!metadata || typeof metadata !== 'object' || metadata === null) return undefined;
+  const metaObj = metadata as Record<string, unknown>;
+
+  const configs = (metaObj.credential_configurations_supported || metaObj.credentials_supported) as
+    | Record<string, unknown>
+    | undefined;
+  if (!configs || typeof configs !== 'object') return undefined;
+
+  let matchedConfig: Record<string, unknown> | undefined = undefined;
+  for (const id of configIds) {
+    if (configs[id] && typeof configs[id] === 'object') {
+      matchedConfig = configs[id] as Record<string, unknown>;
+      break;
+    }
+  }
+
+  if (!matchedConfig) {
+    const firstKey = Object.keys(configs)[0];
+    if (firstKey && typeof configs[firstKey] === 'object') {
+      matchedConfig = configs[firstKey] as Record<string, unknown>;
+    }
+  }
+
+  if (!matchedConfig) return undefined;
+
+  const credMetadata = matchedConfig.credential_metadata as Record<string, unknown> | undefined;
+  const displayList = (credMetadata?.display || matchedConfig.display) as Array<Record<string, unknown>> | undefined;
+
+  if (!Array.isArray(displayList) || displayList.length === 0) return undefined;
+
+  const selectedDisplay =
+    displayList.find((d) => typeof d.locale === 'string' && d.locale.startsWith('de')) ||
+    displayList.find((d) => typeof d.locale === 'string' && d.locale.startsWith('en')) ||
+    displayList[0];
+
+  if (!selectedDisplay) return undefined;
+
+  const logoObj = selectedDisplay.logo as Record<string, unknown> | string | undefined;
+  const logoUrl = typeof logoObj === 'object' && logoObj !== null ? String(logoObj.uri ?? logoObj.url ?? '') : String(logoObj ?? '');
+
+  const bgObj = selectedDisplay.background_image as Record<string, unknown> | string | undefined;
+  const backgroundImageUrl = typeof bgObj === 'object' && bgObj !== null ? String(bgObj.uri ?? bgObj.url ?? '') : String(bgObj ?? '');
+
+  return {
+    name: typeof selectedDisplay.name === 'string' ? selectedDisplay.name : undefined,
+    locale: typeof selectedDisplay.locale === 'string' ? selectedDisplay.locale : undefined,
+    description: typeof selectedDisplay.description === 'string' ? selectedDisplay.description : undefined,
+    logoUrl: logoUrl || undefined,
+    backgroundImageUrl: backgroundImageUrl || undefined,
+    backgroundColor: typeof selectedDisplay.background_color === 'string' ? selectedDisplay.background_color : undefined,
+    textColor: typeof selectedDisplay.text_color === 'string' ? selectedDisplay.text_color : undefined,
+  };
+}
+
 export async function resolveCredentialOfferAsync(
   input: string,
   log?: (level: 'info' | 'warn' | 'error' | 'success', category: any, message: string, details?: unknown) => void
 ): Promise<CredentialOffer> {
-  const initial = parseCredentialOffer(input);
+  let offer = parseCredentialOffer(input);
 
   let offerUri: string | null = null;
   try {
@@ -171,16 +281,16 @@ export async function resolveCredentialOfferAsync(
       if (res.ok) {
         const data = (await res.json()) as Record<string, unknown>;
         log?.('info', 'o4vci', 'Credential Offer URI erfolgreich geladen', data);
-        const issuer = String(data.credential_issuer ?? initial.credential_issuer);
+        const issuer = String(data.credential_issuer ?? offer.credential_issuer);
         const { issuer: cleanIssuer, notificationEndpoint } = extractIssuerFromOfferUri(issuer);
 
-        return {
+        offer = {
           credential_issuer: cleanIssuer,
           credential_configuration_ids: Array.isArray(data.credential_configuration_ids)
             ? data.credential_configuration_ids.map(String)
-            : initial.credential_configuration_ids,
-          grants: (data.grants as CredentialOffer['grants']) ?? initial.grants,
-          display_name: String(data.display_name ?? 'EUDI Playground Credential Offer'),
+            : offer.credential_configuration_ids,
+          grants: (data.grants as CredentialOffer['grants']) ?? offer.grants,
+          display_name: String(data.display_name ?? offer.display_name ?? 'EUDI Playground Credential Offer'),
           notification_endpoint: String(data.notification_endpoint ?? notificationEndpoint),
         };
       } else {
@@ -196,5 +306,18 @@ export async function resolveCredentialOfferAsync(
     }
   }
 
-  return initial;
+  const displayMetadata = await fetchIssuerCredentialMetadata(
+    offer.credential_issuer,
+    offer.credential_configuration_ids,
+    log
+  );
+
+  if (displayMetadata) {
+    offer.display = displayMetadata;
+    if (displayMetadata.name) {
+      offer.display_name = displayMetadata.name;
+    }
+  }
+
+  return offer;
 }

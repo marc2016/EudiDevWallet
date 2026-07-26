@@ -487,7 +487,7 @@ export async function simulateIssueCredential(
 
   const id = `issued-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-  let label = preset?.label;
+  let label = preset?.label || offer.display?.name;
   if (!label) {
     if (claims.organization_name) {
       const org = claims.organization_name;
@@ -500,9 +500,11 @@ export async function simulateIssueCredential(
   }
 
   const category = preset?.category ?? 'Ausgestellte Credentials';
-  const description = claims.organization_name
-    ? `Digitale Mitgliedskarte für ${claims.organization_name}`
-    : (preset?.description ?? `Erfolgreich von ${offer.credential_issuer} empfangen`);
+  const description =
+    offer.display?.description ||
+    (claims.organization_name
+      ? `Digitale Mitgliedskarte für ${claims.organization_name}`
+      : (preset?.description ?? `Erfolgreich von ${offer.credential_issuer} empfangen`));
 
   const identity: MockIdentity = {
     id,
@@ -510,6 +512,7 @@ export async function simulateIssueCredential(
     category,
     description,
     claims,
+    display: offer.display,
   };
 
   const issuedAt = new Date().toISOString();

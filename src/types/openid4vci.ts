@@ -1,4 +1,4 @@
-import type { MockIdentity } from './openid4vp';
+import type { MockIdentity, CredentialDisplayMetadata } from './openid4vp';
 
 export type IssuanceStep = 'OFFER_INPUT' | 'PIN_AUTH' | 'CREDENTIAL_PREVIEW' | 'SUCCESS';
 
@@ -24,6 +24,7 @@ export interface CredentialOffer {
   display_name?: string;
   preset_id?: string;
   notification_endpoint?: string;
+  display?: CredentialDisplayMetadata;
 }
 
 export interface IssuancePreset {

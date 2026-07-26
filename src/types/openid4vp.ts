@@ -103,12 +103,23 @@ export interface CertificateValidationResult {
   trustAnchorValid?: boolean;
 }
 
+export interface CredentialDisplayMetadata {
+  name?: string;
+  locale?: string;
+  description?: string;
+  logoUrl?: string;
+  backgroundImageUrl?: string;
+  backgroundColor?: string;
+  textColor?: string;
+}
+
 export interface MockIdentity {
   id: string;
   label: string;
   category?: string;
   description?: string;
   claims: Record<string, string>;
+  display?: CredentialDisplayMetadata;
 }
 
 export interface BuiltResponse {

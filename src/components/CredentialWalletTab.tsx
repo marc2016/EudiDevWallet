@@ -82,6 +82,11 @@ const CLAIM_LABELS: Record<string, string> = {
 };
 
 function getCardGradient(identity: MockIdentity): string {
+  if (identity.display?.backgroundColor) {
+    const bg = identity.display.backgroundColor;
+    if (bg.includes('gradient') || bg.includes('url')) return bg;
+    return `linear-gradient(135deg, ${bg} 0%, ${bg} 100%)`;
+  }
   if (identity.category === 'PID') {
     return 'linear-gradient(135deg, #1e3a5f 0%, #2563eb 60%, #3b82f6 100%)';
   }
@@ -165,19 +170,55 @@ function CredentialDetailModal({ identity, onClose, onRemove }: CredentialDetail
       {/* Card-style header */}
       <div
         className="cred-modal-header"
-        style={{ background: getCardGradient(identity) }}
+        style={{
+          background: getCardGradient(identity),
+          color: identity.display?.textColor ?? '#ffffff',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
       >
-        <div className="cred-card-circle cred-card-circle--1" aria-hidden />
-        <div className="cred-card-circle cred-card-circle--2" aria-hidden />
+        {identity.display?.backgroundImageUrl ? (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundImage: `url(${identity.display.backgroundImageUrl})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              opacity: 0.45,
+              pointerEvents: 'none',
+            }}
+            aria-hidden
+          />
+        ) : (
+          <>
+            <div className="cred-card-circle cred-card-circle--1" aria-hidden />
+            <div className="cred-card-circle cred-card-circle--2" aria-hidden />
+          </>
+        )}
 
-        <div className="cred-modal-header-top">
-          <div className="cred-modal-header-left">
-            <Icon
-              path={getCardIconPath(identity)}
-              size={1.4}
-              style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.35))' }}
-              aria-hidden
-            />
+        <div className="cred-modal-header-top" style={{ position: 'relative', zIndex: 1 }}>
+          <div className="cred-modal-header-left" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {identity.display?.logoUrl ? (
+              <img
+                src={identity.display.logoUrl}
+                alt="Logo"
+                style={{
+                  maxHeight: '1.8rem',
+                  maxWidth: '5rem',
+                  objectFit: 'contain',
+                  filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.4))',
+                  borderRadius: '4px',
+                }}
+              />
+            ) : (
+              <Icon
+                path={getCardIconPath(identity)}
+                size={1.4}
+                style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.35))' }}
+                aria-hidden
+              />
+            )}
             <span className="cred-card-chip">{getChipLabel(identity)}</span>
           </div>
           <button className="cred-modal-close" onClick={onClose} aria-label="Schließen">
@@ -185,9 +226,13 @@ function CredentialDetailModal({ identity, onClose, onRemove }: CredentialDetail
           </button>
         </div>
 
-        <div className="cred-modal-title">{identity.label.replace(/^[^\w]+ ?/, '')}</div>
+        <div className="cred-modal-title" style={{ position: 'relative', zIndex: 1 }}>
+          {identity.label.replace(/^[^\w]+ ?/, '')}
+        </div>
         {identity.description && !identity.description.startsWith('Erfolgreich von') && (
-          <div className="cred-modal-subtitle">{identity.description}</div>
+          <div className="cred-modal-subtitle" style={{ position: 'relative', zIndex: 1, opacity: 0.9 }}>
+            {identity.description}
+          </div>
         )}
       </div>
 
@@ -255,7 +300,13 @@ function CredentialCard({ identity, onRemove, onClick }: CredentialCardProps) {
   return (
     <div
       className={`cred-card ${hovered ? 'cred-card--hovered' : ''}`}
-      style={{ background: getCardGradient(identity), cursor: 'pointer' }}
+      style={{
+        background: getCardGradient(identity),
+        color: identity.display?.textColor ?? undefined,
+        position: 'relative',
+        overflow: 'hidden',
+        cursor: 'pointer',
+      }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={() => onClick(identity)}
@@ -264,29 +315,64 @@ function CredentialCard({ identity, onRemove, onClick }: CredentialCardProps) {
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(identity); }}
       aria-label={`${identity.label} — Details anzeigen`}
     >
-      {/* Decorative circles */}
-      <div className="cred-card-circle cred-card-circle--1" aria-hidden />
-      <div className="cred-card-circle cred-card-circle--2" aria-hidden />
-
-      {/* Header row */}
-      <div className="cred-card-header">
-        <Icon
-          path={getCardIconPath(identity)}
-          size={1.1}
-          className="cred-card-mdi-icon"
+      {/* Background Image Layer */}
+      {identity.display?.backgroundImageUrl ? (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `url(${identity.display.backgroundImageUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: 0.4,
+            pointerEvents: 'none',
+          }}
           aria-hidden
         />
+      ) : (
+        <>
+          <div className="cred-card-circle cred-card-circle--1" aria-hidden />
+          <div className="cred-card-circle cred-card-circle--2" aria-hidden />
+        </>
+      )}
+
+      {/* Header row */}
+      <div className="cred-card-header" style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {identity.display?.logoUrl ? (
+          <img
+            src={identity.display.logoUrl}
+            alt="Logo"
+            style={{
+              maxHeight: '1.5rem',
+              maxWidth: '4.5rem',
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))',
+              borderRadius: '3px',
+            }}
+          />
+        ) : (
+          <Icon
+            path={getCardIconPath(identity)}
+            size={1.1}
+            className="cred-card-mdi-icon"
+            aria-hidden
+          />
+        )}
         <span className="cred-card-chip">{getChipLabel(identity)}</span>
       </div>
 
       {/* Title + description */}
-      <div className="cred-card-title">{identity.label.replace(/^[^\w]+ ?/, '')}</div>
+      <div className="cred-card-title" style={{ position: 'relative', zIndex: 1 }}>
+        {identity.label.replace(/^[^\w]+ ?/, '')}
+      </div>
       {identity.description && !identity.description.startsWith('Erfolgreich von') && (
-        <div className="cred-card-desc">{identity.description}</div>
+        <div className="cred-card-desc" style={{ position: 'relative', zIndex: 1, opacity: 0.9 }}>
+          {identity.description}
+        </div>
       )}
 
       {/* Claim preview */}
-      <div className="cred-card-claims">
+      <div className="cred-card-claims" style={{ position: 'relative', zIndex: 1 }}>
         {preview.map(({ label, value }) => (
           <div key={label} className="cred-card-claim">
             <span className="cred-card-claim-label">{label}</span>
@@ -296,7 +382,7 @@ function CredentialCard({ identity, onRemove, onClick }: CredentialCardProps) {
       </div>
 
       {/* Footer */}
-      <div className="cred-card-footer">
+      <div className="cred-card-footer" style={{ position: 'relative', zIndex: 1 }}>
         <span className="cred-card-issuer">
           {identity.claims['issuing_authority'] ?? identity.claims['issuing_country'] ?? ''}
         </span>
