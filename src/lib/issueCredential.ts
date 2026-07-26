@@ -410,6 +410,62 @@ function formatCredentialLabel(raw: string): string {
     .join(' ');
 }
 
+export function buildPreviewIdentityFromOffer(offer: CredentialOffer): MockIdentity {
+  const preset = ISSUANCE_PRESETS.find((p) => p.id === offer.preset_id);
+  const defaultFallbackClaims: Record<string, string> = {
+    given_name: 'Max',
+    family_name: 'Mustermann',
+    birth_date: '1990-01-15',
+    document_type: offer.credential_configuration_ids[0] ?? 'Custom EAA',
+    issuing_authority: offer.credential_issuer,
+    issue_date: new Date().toISOString().split('T')[0] ?? '',
+  };
+
+  const claims: Record<string, string> = {
+    ...(preset?.claims ?? defaultFallbackClaims),
+  };
+
+  if (!claims.document_type) {
+    claims.document_type = offer.credential_configuration_ids[0] ?? 'Custom EAA';
+  }
+  if (!claims.issuing_authority) {
+    claims.issuing_authority = offer.credential_issuer;
+  }
+  if (offer.credential_configuration_ids.includes('university-diploma')) {
+    if (!claims.degree_name) claims.degree_name = 'Master of Science';
+    if (!claims.university_name) claims.university_name = 'EUDI Playground University';
+    if (!claims.graduation_year) claims.graduation_year = '2025';
+  }
+
+  let label = preset?.label || offer.display?.name;
+  if (!label) {
+    if (claims.organization_name) {
+      const org = claims.organization_name;
+      label = org.toLowerCase().includes('fitlife') ? 'FitLife Mitgliedschaft' : `${org} Mitgliedschaft`;
+    } else if (offer.display_name && !offer.display_name.includes('Offer')) {
+      label = offer.display_name;
+    } else {
+      label = formatCredentialLabel(offer.credential_configuration_ids[0] || 'Credential');
+    }
+  }
+
+  const category = preset?.category ?? 'Ausgestellte Credentials';
+  const description =
+    offer.display?.description ||
+    (claims.organization_name
+      ? `Digitale Mitgliedskarte für ${claims.organization_name}`
+      : (preset?.description ?? `Erfolgreich von ${offer.credential_issuer} empfangen`));
+
+  return {
+    id: `preview-${offer.credential_issuer}`,
+    label,
+    category,
+    description,
+    claims,
+    display: offer.display,
+  };
+}
+
 export async function simulateIssueCredential(
   offer: CredentialOffer,
   userClaimsOverride?: Record<string, string>,

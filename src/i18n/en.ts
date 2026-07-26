@@ -80,7 +80,6 @@ export const en: Record<TranslationKey, string> = {
   'simple.pasteFromClipboard': 'Paste from clipboard',
   'simple.processing': 'Processing…',
   'simple.completed': 'Completed',
-  'simple.issuanceHeader': '📥 Credential Issuance (OpenID4VCI)',
 
   // Request Input (Debug View)
   'requestInput.instruction': 'Insert OpenID4VP request or OpenID4VCI Credential Offer URI / query string',

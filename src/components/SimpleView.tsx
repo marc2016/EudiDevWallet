@@ -8,8 +8,10 @@ import { Checkbox } from 'primereact/checkbox';
 import { Tag } from 'primereact/tag';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { SelectiveDisclosureModal } from './SelectiveDisclosureModal';
-import { CredentialWalletTab } from './CredentialWalletTab';
+import { CredentialWalletTab, CredentialCard, CredentialDetailModal } from './CredentialWalletTab';
 import type { useWalletFlow } from '../hooks/useWalletFlow';
+import type { MockIdentity } from '../types/openid4vp';
+import { buildPreviewIdentityFromOffer } from '../lib/issueCredential';
 import { useTranslation } from '../i18n/LanguageContext';
 
 type WalletFlow = ReturnType<typeof useWalletFlow>;
@@ -54,6 +56,7 @@ export function SimpleView({ flow }: SimpleViewProps) {
   const [leavingStep, setLeavingStep] = useState<SimpleStep | null>(null);
   const [url, setUrl] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [selectedModalIdentity, setSelectedModalIdentity] = useState<MockIdentity | null>(null);
   const [activeTab, setActiveTab] = useState<'request' | 'wallet'>('request');
   const skipTransitionRef = useRef(true);
 
@@ -125,15 +128,15 @@ export function SimpleView({ flow }: SimpleViewProps) {
   const groupedIdentities = [
     ...(customIdentities.length > 0
       ? [
-          {
-            label: '📥 Ausgestellte Credentials (OpenID4VCI)',
-            items: customIdentities.map((m) => ({
-              label: m.label,
-              value: m.id,
-              description: m.description,
-            })),
-          },
-        ]
+        {
+          label: '📥 Ausgestellte Credentials (OpenID4VCI)',
+          items: customIdentities.map((m) => ({
+            label: m.label,
+            value: m.id,
+            description: m.description,
+          })),
+        },
+      ]
       : []),
     {
       label: '🆔 Personalausweis (PID)',
@@ -211,49 +214,45 @@ export function SimpleView({ flow }: SimpleViewProps) {
         if (!offer) return null;
         const requiresPin =
           offer.grants?.['urn:ietf:params:oauth:grant-type:pre-authorized_code']?.user_pin_required;
+        const previewIdentity = buildPreviewIdentityFromOffer(offer);
 
         return (
           <>
-            <div className="flex align-items-center justify-content-between mb-2">
-              <h2 className="simple-heading mb-0">📥 Credential Ausstellung (OpenID4VCI)</h2>
-              <Tag value={offer.credential_configuration_ids[0] ?? 'VC'} severity="info" />
+            <div className="mb-3">
+              <div className="cred-card-single-wrapper">
+                <CredentialCard
+                  identity={previewIdentity}
+                  onClick={(identity) => setSelectedModalIdentity(identity)}
+                />
+              </div>
             </div>
 
-            <div className="surface-100 p-3 border-round mb-3 text-sm">
-              <div className="font-semibold text-base mb-1">
-                {offer.display_name || 'Neues Credential'}
-              </div>
-              <div className="text-xs text-color-secondary mb-2">
-                Issuer: <code>{offer.credential_issuer}</code>
-              </div>
-
-              {requiresPin && (
-                <div className="mt-3">
-                  <label className="block text-xs font-semibold mb-1">
-                    Authentifizierung — 6-stelliger PIN / TxCode:
-                  </label>
-                  <InputText
-                    value={flow.issuancePinInput}
-                    onChange={(e) => flow.setIssuancePinInput(e.target.value)}
-                    maxLength={6}
-                    className="w-full text-center text-lg font-mono tracking-widest mb-1"
-                    placeholder="123456"
-                  />
-                  {flow.issuancePinError && (
-                    <div className="text-red-500 text-xs font-semibold mb-1">
-                      {flow.issuancePinError}
-                    </div>
-                  )}
-                  <div className="text-xs text-blue-600">
-                    💡 Test-PIN: <strong>123456</strong>
+            {requiresPin && (
+              <div className="surface-100 p-3 border-round mb-3 text-sm">
+                <label className="block text-xs font-semibold mb-1">
+                  Authentifizierung — 6-stelliger PIN / TxCode:
+                </label>
+                <InputText
+                  value={flow.issuancePinInput}
+                  onChange={(e) => flow.setIssuancePinInput(e.target.value)}
+                  maxLength={6}
+                  className="w-full text-center text-lg font-mono tracking-widest mb-1"
+                  placeholder="123456"
+                />
+                {flow.issuancePinError && (
+                  <div className="text-red-500 text-xs font-semibold mb-1">
+                    {flow.issuancePinError}
                   </div>
+                )}
+                <div className="text-xs text-blue-600">
+                  💡 Test-PIN: <strong>123456</strong>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="simple-review-actions">
               <Button
-                label="Credential empfangen & in Wallet speichern"
+                label="In Wallet speichern"
                 icon="pi pi-download"
                 severity="success"
                 className="w-full"
@@ -275,6 +274,16 @@ export function SimpleView({ flow }: SimpleViewProps) {
             <p className="text-sm text-color-secondary text-center mt-2 mb-3">
               Das Credential <strong>{result?.identity.label}</strong> wurde in deiner Wallet gespeichert und steht ab sofort im IdentityPicker bereit.
             </p>
+            {result?.identity && (
+              <div className="mb-3">
+                <div className="cred-card-single-wrapper">
+                  <CredentialCard
+                    identity={result.identity}
+                    onClick={(identity) => setSelectedModalIdentity(identity)}
+                  />
+                </div>
+              </div>
+            )}
             <div className="simple-result-actions">
               <Button label="Neue Anfrage / Credential" onClick={handleReset} />
             </div>
@@ -541,6 +550,12 @@ export function SimpleView({ flow }: SimpleViewProps) {
         onToggleClaimSelection={flow.toggleClaimSelection}
         onSelectAllClaims={flow.selectAllClaims}
         onDeselectOptionalClaims={flow.deselectOptionalClaims}
+      />
+
+      <CredentialDetailModal
+        identity={selectedModalIdentity}
+        onClose={() => setSelectedModalIdentity(null)}
+        hideDelete
       />
     </div>
   );

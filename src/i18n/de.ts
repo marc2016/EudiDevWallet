@@ -78,7 +78,6 @@ export const de = {
   'simple.pasteFromClipboard': 'Aus Zwischenablage einfügen',
   'simple.processing': 'Verarbeitung…',
   'simple.completed': 'Abgeschlossen',
-  'simple.issuanceHeader': '📥 Credential Ausstellung (OpenID4VCI)',
 
   // Request Input (Debug View)
   'requestInput.instruction': 'OpenID4VP-Anfrage oder OpenID4VCI Credential Offer URI / Query-String einfügen',

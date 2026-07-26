@@ -97,6 +97,36 @@ function getCardGradient(identity: MockIdentity): string {
   return 'linear-gradient(135deg, #3b0764 0%, #7c3aed 60%, #a78bfa 100%)';
 }
 
+function isDarkColor(colorStr?: string): boolean {
+  if (!colorStr) return true;
+  const str = colorStr.trim().toLowerCase();
+  if (str.includes('gradient') || str.includes('url')) return true;
+  if (str.startsWith('#')) {
+    const hex = str.replace('#', '');
+    let r = 0, g = 0, b = 0;
+    if (hex.length === 3) {
+      r = parseInt(hex[0] + hex[0], 16);
+      g = parseInt(hex[1] + hex[1], 16);
+      b = parseInt(hex[2] + hex[2], 16);
+    } else if (hex.length === 6) {
+      r = parseInt(hex.substring(0, 2), 16);
+      g = parseInt(hex.substring(2, 4), 16);
+      b = parseInt(hex.substring(4, 6), 16);
+    }
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness < 180;
+  }
+  return true;
+}
+
+export function getCardTextColor(identity: MockIdentity): string {
+  const bg = identity.display?.backgroundColor;
+  if (!bg || isDarkColor(bg)) {
+    return '#ffffff';
+  }
+  return identity.display?.textColor ?? '#ffffff';
+}
+
 function getChipLabel(identity: MockIdentity): string {
   if (identity.category === 'PID') return 'PID';
   if (identity.category === 'EAA Presets') return 'EAA';
@@ -128,19 +158,21 @@ function getPreviewClaims(identity: MockIdentity): { label: string; value: strin
 // Detail Modal
 // ─────────────────────────────────────────────
 
-interface CredentialDetailModalProps {
+export interface CredentialDetailModalProps {
   identity: MockIdentity | null;
   onClose: () => void;
-  onRemove: (id: string) => void;
+  onRemove?: (id: string) => void;
+  hideDelete?: boolean;
 }
 
-function CredentialDetailModal({ identity, onClose, onRemove }: CredentialDetailModalProps) {
+export function CredentialDetailModal({ identity, onClose, onRemove, hideDelete }: CredentialDetailModalProps) {
   if (!identity) return null;
 
-  const custom = isCustom(identity);
+  const custom = isCustom(identity) && !hideDelete && Boolean(onRemove);
   const allClaims = Object.entries(identity.claims);
 
   const handleDelete = () => {
+    if (!onRemove) return;
     confirmDialog({
       message: `Credential „${identity.label}" wirklich löschen?`,
       header: 'Credential löschen',
@@ -173,7 +205,7 @@ function CredentialDetailModal({ identity, onClose, onRemove }: CredentialDetail
         className="cred-modal-header"
         style={{
           background: getCardGradient(identity),
-          color: identity.display?.textColor ?? '#ffffff',
+          color: getCardTextColor(identity),
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -274,20 +306,21 @@ function CredentialDetailModal({ identity, onClose, onRemove }: CredentialDetail
 // Credential Card (tile)
 // ─────────────────────────────────────────────
 
-interface CredentialCardProps {
+export interface CredentialCardProps {
   identity: MockIdentity;
-  onRemove: (id: string) => void;
+  onRemove?: (id: string) => void;
   onClick: (identity: MockIdentity) => void;
 }
 
-function CredentialCard({ identity, onRemove, onClick }: CredentialCardProps) {
+export function CredentialCard({ identity, onRemove, onClick }: CredentialCardProps) {
   const { t } = useTranslation();
   const [hovered, setHovered] = useState(false);
-  const custom = isCustom(identity);
+  const custom = isCustom(identity) && Boolean(onRemove);
   const preview = getPreviewClaims(identity);
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation(); // don't open the modal
+    if (!onRemove) return;
     confirmDialog({
       message: t('wallet.deleteConfirmMsg', { title: identity.label }),
       header: t('wallet.deleteConfirmTitle'),
@@ -304,7 +337,7 @@ function CredentialCard({ identity, onRemove, onClick }: CredentialCardProps) {
       className={`cred-card ${hovered ? 'cred-card--hovered' : ''}`}
       style={{
         background: getCardGradient(identity),
-        color: identity.display?.textColor ?? undefined,
+        color: getCardTextColor(identity),
         position: 'relative',
         overflow: 'hidden',
         cursor: 'pointer',
