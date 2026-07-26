@@ -1,4 +1,4 @@
-![EudiDevWallet](public/logo.png)
+<img src="public/logo.png" alt="EudiDevWallet" width="200" />
 
 # EudiDevWallet
 
