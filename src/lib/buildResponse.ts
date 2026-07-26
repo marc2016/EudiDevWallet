@@ -55,7 +55,7 @@ export async function buildResponse(
   }
 
   if (mode === 'direct_post_jwt') {
-    const inner = await encryptDirectPostJwtResponse(request, vpToken);
+    const inner = await encryptDirectPostJwtResponse(request, vpToken, presentationSubmission);
     const params = new URLSearchParams({ response: inner });
     return {
       contentType: 'application/x-www-form-urlencoded',

@@ -185,7 +185,7 @@ function CredentialDetailModal({ identity, onClose, onRemove }: CredentialDetail
         </div>
 
         <div className="cred-modal-title">{identity.label.replace(/^[^\w]+ ?/, '')}</div>
-        {identity.description && (
+        {identity.description && !identity.description.startsWith('Erfolgreich von') && (
           <div className="cred-modal-subtitle">{identity.description}</div>
         )}
       </div>
@@ -280,7 +280,7 @@ function CredentialCard({ identity, onRemove, onClick }: CredentialCardProps) {
 
       {/* Title + description */}
       <div className="cred-card-title">{identity.label.replace(/^[^\w]+ ?/, '')}</div>
-      {identity.description && (
+      {identity.description && !identity.description.startsWith('Erfolgreich von') && (
         <div className="cred-card-desc">{identity.description}</div>
       )}
 

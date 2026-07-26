@@ -22,7 +22,7 @@ async function getIssuerKey(): Promise<CryptoKey> {
   return cachedIssuerKey;
 }
 
-async function getHolderKey(): Promise<{ privateKey: CryptoKey; publicJwk: JWK }> {
+export async function getHolderKey(): Promise<{ privateKey: CryptoKey; publicJwk: JWK }> {
   if (cachedHolderKey && cachedHolderJwk) {
     return { privateKey: cachedHolderKey, publicJwk: cachedHolderJwk };
   }

@@ -49,11 +49,11 @@ export async function fetchOpenID4VCIAccessToken(
     : offer.credential_issuer.endsWith('/vci')
       ? [`${offer.credential_issuer}/token`]
       : [
-          // Fallbacks for specific environments (e.g. EUDIPLO playground requires /authorize/token)
-          `${offer.credential_issuer}/token`,
-          `${offer.credential_issuer}/vci/token`,
-          `${offer.credential_issuer}/authorize/token`
-        ];
+        // Fallbacks for specific environments (e.g. EUDIPLO playground requires /authorize/token)
+        `${offer.credential_issuer}/token`,
+        `${offer.credential_issuer}/vci/token`,
+        `${offer.credential_issuer}/authorize/token`
+      ];
 
   for (const endpoint of tokenEndpoints) {
     try {
@@ -394,6 +394,22 @@ export async function requestLiveCredentialFromIssuer(
   return undefined;
 }
 
+function formatCredentialLabel(raw: string): string {
+  if (!raw) return 'Credential';
+  const mapping: Record<string, string> = {
+    'university-diploma': 'University Diploma',
+    'eu.europa.ec.eudi.pid.1': 'EU Personalausweis (PID)',
+    'eu.europa.ec.eudi.health.ehic.1': 'EU Health Card (EHIC)',
+    'org.iso.18013.5.1.mDL': 'EU Führerschein (mDL)',
+  };
+  if (mapping[raw]) return mapping[raw];
+
+  return raw
+    .split(/[-_.]+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
 export async function simulateIssueCredential(
   offer: CredentialOffer,
   userClaimsOverride?: Record<string, string>,
@@ -463,6 +479,11 @@ export async function simulateIssueCredential(
   if (!claims.issuing_authority) {
     claims.issuing_authority = offer.credential_issuer;
   }
+  if (offer.credential_configuration_ids.includes('university-diploma')) {
+    if (!claims.degree_name) claims.degree_name = 'Master of Science';
+    if (!claims.university_name) claims.university_name = 'EUDI Playground University';
+    if (!claims.graduation_year) claims.graduation_year = '2025';
+  }
 
   const id = `issued-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
@@ -474,7 +495,7 @@ export async function simulateIssueCredential(
     } else if (offer.display_name && !offer.display_name.includes('Offer')) {
       label = offer.display_name;
     } else {
-      label = offer.credential_configuration_ids[0] || 'Credential';
+      label = formatCredentialLabel(offer.credential_configuration_ids[0] || 'Credential');
     }
   }
 
@@ -504,10 +525,10 @@ export async function simulateIssueCredential(
     accessToken,
     notification: notificationId
       ? {
-          notification_id: notificationId,
-          event: 'credential_accepted',
-          event_description: 'Credential successfully stored in EudiDevWallet',
-        }
+        notification_id: notificationId,
+        event: 'credential_accepted',
+        event_description: 'Credential successfully stored in EudiDevWallet',
+      }
       : undefined,
   };
 }

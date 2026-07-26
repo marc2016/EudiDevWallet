@@ -185,7 +185,7 @@ export function DebugView({ flow }: DebugViewProps) {
                                 <div className="mt-1 font-semibold">{flow.issuedCredentialResult.identity.label}</div>
                               </div>
 
-                              {flow.issuedCredentialResult.identity.description && (
+                              {flow.issuedCredentialResult.identity.description && !flow.issuedCredentialResult.identity.description.startsWith('Erfolgreich von') && (
                                 <div className="text-sm">
                                   <span className="text-color-secondary text-xs font-semibold uppercase" style={{ letterSpacing: '0.05em' }}>Beschreibung</span>
                                   <div className="mt-1">{flow.issuedCredentialResult.identity.description}</div>
