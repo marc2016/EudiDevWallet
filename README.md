@@ -42,6 +42,20 @@ docker compose --profile dev up --build
 docker compose --profile prod up --build
 ```
 
+## Screenshots
+
+| Mein Wallet | Ausweis-Details |
+| :---: | :---: |
+| ![Mein Wallet](docs/screenshots/wallet_overview.png) | ![Ausweis Details](docs/screenshots/credential_detail.png) |
+
+| Credential hinzufügen / Anfrage | Verifier Präsentations-Anfrage |
+| :---: | :---: |
+| ![Credential Hinzufügen](docs/screenshots/add_credential.png) | ![Verifier Anfrage](docs/screenshots/verifier_presentation.png) |
+
+| Erfolgreiche Freigabe | Debug-Modus / Einstellungen |
+| :---: | :---: |
+| ![Erfolgreiche Freigabe](docs/screenshots/successful_presentation.png) | ![Debug Modus](docs/screenshots/debug_mode.png) |
+
 ## Bedienung
 
 1. **OpenID4VP-URL** oben links in der Card „Anfrage“ einfügen (oder den Paste-Button `📋` nutzen, um die URL direkt aus der Zwischenablage einzufügen)
