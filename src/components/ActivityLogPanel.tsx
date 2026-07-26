@@ -3,7 +3,6 @@ import { Timeline } from 'primereact/timeline';
 import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
-import { Accordion, AccordionTab } from 'primereact/accordion';
 import { useActivityLog } from '../log/ActivityLogContext';
 import { formatLogDetails, formatLogTime } from '../log/activityLog';
 import { loadClearLogOnRequest, saveClearLogOnRequest } from '../settings/walletSettings';
@@ -56,32 +55,46 @@ function levelColor(level: LogLevel): string {
 }
 
 function TimelineItem({ entry }: { entry: ActivityLogEntry }) {
+  const [showDetails, setShowDetails] = useState(false);
+
   const copyDetails = async () => {
     await navigator.clipboard.writeText(formatLogDetails(entry.details));
   };
 
   return (
     <div className="text-sm log-timeline-item">
-      <div className="font-medium word-break-all">{entry.message}</div>
-      {entry.details !== undefined && (
-        <Accordion className="mt-1">
-          <AccordionTab header="Details">
-            <div className="flex justify-content-end mb-1">
-              <Button
-                icon="pi pi-copy"
-                severity="secondary"
-                size="small"
-                text
-                onClick={copyDetails}
-                tooltip="Details kopieren"
-                aria-label="Details kopieren"
-              />
-            </div>
-            <pre className="text-xs m-0 log-details-pre">
-              {formatLogDetails(entry.details)}
-            </pre>
-          </AccordionTab>
-        </Accordion>
+      <div className="flex align-items-start justify-content-between gap-2">
+        <div className="font-medium word-break-all flex-1">{entry.message}</div>
+        {entry.details !== undefined && (
+          <Button
+            icon={showDetails ? 'pi pi-chevron-up' : 'pi pi-chevron-down'}
+            severity="secondary"
+            size="small"
+            text
+            className="p-button-xs flex-shrink-0"
+            style={{ padding: '0.2rem 0.4rem', fontSize: '0.75rem', height: 'auto' }}
+            onClick={() => setShowDetails(!showDetails)}
+            aria-label="Details umschalten"
+          />
+        )}
+      </div>
+      {entry.details !== undefined && showDetails && (
+        <div className="mt-2 p-2 surface-100 border-round">
+          <div className="flex justify-content-end mb-1">
+            <Button
+              icon="pi pi-copy"
+              severity="secondary"
+              size="small"
+              text
+              style={{ padding: '0.2rem 0.4rem', fontSize: '0.75rem' }}
+              onClick={copyDetails}
+              aria-label="Details kopieren"
+            />
+          </div>
+          <pre className="text-xs m-0 log-details-pre">
+            {formatLogDetails(entry.details)}
+          </pre>
+        </div>
       )}
     </div>
   );
@@ -120,9 +133,9 @@ export function ActivityLogPanel() {
       <div className="log-panel-header">
         <h2 className="log-panel-title">Aktivitäts-Protokoll</h2>
         <div className="flex flex-wrap gap-2">
-          <Button icon="pi pi-trash" severity="secondary" size="small" onClick={clear} tooltip="Log leeren" />
-          <Button icon="pi pi-download" severity="secondary" size="small" onClick={exportJson} tooltip="Export JSON" />
-          <Button icon="pi pi-copy" severity="secondary" size="small" onClick={copyLog} tooltip="Kopieren" />
+          <Button icon="pi pi-trash" severity="secondary" size="small" onClick={clear} />
+          <Button icon="pi pi-download" severity="secondary" size="small" onClick={exportJson} />
+          <Button icon="pi pi-copy" severity="secondary" size="small" onClick={copyLog} />
         </div>
       </div>
 
