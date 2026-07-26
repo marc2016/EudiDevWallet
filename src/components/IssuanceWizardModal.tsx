@@ -128,6 +128,8 @@ export function IssuanceWizardModal({
     <Dialog
       header="📥 OpenID4VCI — Credential ausstellen (Issuance Flow)"
       visible={visible}
+      modal
+      blockScroll
       style={{ width: '90vw', maxWidth: '720px' }}
       onHide={handleResetAndHide}
       footer={

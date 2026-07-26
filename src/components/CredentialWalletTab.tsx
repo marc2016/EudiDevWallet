@@ -154,6 +154,7 @@ function CredentialDetailModal({ identity, onClose, onRemove }: CredentialDetail
       visible
       onHide={onClose}
       modal
+      blockScroll
       dismissableMask
       closable={false}
       showHeader={false}

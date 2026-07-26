@@ -520,6 +520,13 @@ body {
   }
 }
 
+/* Lock background scroll when modal is open */
+body.p-overflow-hidden,
+body.p-overflow-hidden .workflow-column,
+body.p-overflow-hidden .log-column {
+  overflow: hidden !important;
+}
+
 @media (max-width: 991px) {
   .log-column {
     border-left: none;

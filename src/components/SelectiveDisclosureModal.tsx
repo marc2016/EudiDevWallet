@@ -82,6 +82,8 @@ export function SelectiveDisclosureModal({
         </div>
       }
       visible={visible}
+      modal
+      blockScroll
       style={{ width: '90vw', maxWidth: '54rem' }}
       onHide={onHide}
       footer={footer}
