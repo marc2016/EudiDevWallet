@@ -477,7 +477,7 @@ export function SimpleView({ flow }: SimpleViewProps) {
     <div className="simple-view">
       {/* App brand — always visible above tabs */}
       <div className="simple-brand">
-        <img src="/logo.png?v=2" alt="EudiDevWallet" className="simple-logo" />
+        <img src="./logo.png?v=2" alt="EudiDevWallet" className="simple-logo" />
         <h1 className="simple-title">EudiDevWallet</h1>
       </div>
 
